@@ -1,3 +1,12 @@
+use gui::GUI;
+
+mod gui;
+
 fn main() {
-    println!("Hello, world!");
+    // setup gui
+    let mut gui = GUI::initialize();
+
+    while gui.wait() {
+
+    }
 }
