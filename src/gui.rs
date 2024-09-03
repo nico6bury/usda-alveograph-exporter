@@ -42,7 +42,12 @@ pub struct GUI {
 }//end struct GUI
 
 impl GUI {
-    
+    /// Returns a clone of the receiver so you can
+    /// react to messages sent by gui.
+    pub fn get_receiver(&self) -> Receiver<InterfaceMessage> {
+        return self.msg_receiver.clone();
+    }//end get_receiver(self)
+
     /// Gives a small visual indication that the program is doing something in the background.
     pub fn start_wait(&mut self) {
         self.ux_main_window.set_cursor(fltk::enums::Cursor::Wait);
