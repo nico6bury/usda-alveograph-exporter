@@ -5,7 +5,7 @@ pub mod data;
 
 /// This module contains code for storing,
 /// loading, and saving configuration information.
-pub mod configstore;
+pub mod config_store;
 
 /// This module contains code for processing
 /// data from the data module and exporting
