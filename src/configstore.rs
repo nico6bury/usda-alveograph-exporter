@@ -95,7 +95,7 @@ pub fn try_read_config_path(config_name: &str, create_if_missing: bool) -> Resul
     let config_path = {
         let mut config_path = exe_path.clone();
         config_path.set_file_name(config_name);
-        config_path.set_extension("json");
+        config_path.set_extension("config");
         config_path
     };
 
@@ -138,7 +138,7 @@ pub fn try_read_config(config_path: &PathBuf) -> Result<ConfigStore,String> {
 pub fn try_write_config(config_path: &PathBuf, config_store: &ConfigStore) -> Result<(),String> {
     match File::create(config_path) {
         Ok(mut file) => {
-            match serde_json::to_string_pretty(config_store) {
+            match serde_json::to_string(config_store) {
                 Ok(config_serial) => {
                     match file.write_all(config_serial.as_bytes()) {
                         Ok(_) => Ok(()),
