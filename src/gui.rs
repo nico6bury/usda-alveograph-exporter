@@ -1,6 +1,6 @@
 use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
-use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, prelude::{ButtonExt, DisplayExt, GroupExt, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor}, window::{self, Window}};
+use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, BeepType, FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, prelude::{ButtonExt, DisplayExt, GroupExt, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor, WrapMode}, window::{self, Window}};
 
 /// Width in pixels of the main window
 const WINDOW_WIDTH: i32 = 700;
@@ -55,6 +55,41 @@ const IO_PRC_BTN_WIDTH: i32 = 250;
 /// A gray color is recommended in order to indicate that it cannot be edited by the user.
 const IO_INPUT_BOX_COLOR: Color = Color::from_rgb(240,240,240);
 
+/// The padding in pixels to give to the dialog text box
+const DIALOG_BOX_PADDING: i32 = 10;
+/// The height of the section where buttons appear in the dialog section
+const DIALOG_BTNS_HEIGHT: i32 = 40;
+/// The color to use for text in the dialog box
+const DIALOG_BOX_TEXT_COLOR: Color = Color::from_rgb(0,0,64);
+/// The color to use for the background in the dialog box
+const DIALOG_BOX_COLOR: Color = Color::from_rgb(255,250,240);
+/// The frame to use for the dialog box
+const DIALOG_BOX_FRAME: FrameType = FrameType::GtkThinDownFrame;
+/// The wrap mode to use for the dialog box
+const DIALOG_BOX_WRAP_MODE: WrapMode = WrapMode::AtBounds;
+/// The work wrapping margin to use for the dialog box
+const DIALOG_BOX_WRAP_MARGIN: i32 = 1;
+/// The alignment to use for the scrollbar in the dialog box
+const DIALOG_BOX_SCROLL_ALIGN: Align = Align::Right;
+/// The size in pixels for the scrollbar in the dialog box
+const DIALOG_BOX_SCROLL_SIZE: i32 = 10;
+/// The text size to use for the dialog box
+const DIALOG_BOX_TEXT_SIZE: i32 = 16;
+/// The color to use for the background of the space that dialog buttons appear in
+const DIALOG_BTNS_BACK_COLOR: Color = Color::from_rgb(255,248,220);
+/// The frame to use for the space holding the dialog buttons
+const DIALOG_BTNS_BACK_FRAME: FrameType = FrameType::FlatBox;
+/// The frame to use for each dialog button.
+const DIALOG_BTN_FRAME: FrameType = FrameType::GtkRoundDownFrame;
+/// The down frame to use for each dialog button. 
+/// This is the frame that's used when the button is pressed down.
+const DIALOG_BTN_DOWN_FRAME: FrameType = FrameType::GtkRoundDownFrame;
+/// The color used for each dialog button.
+const DIALOG_BTN_COLOR: Color = Color::from_rgb(245,245,245);
+/// The down color used for each dialog button. 
+/// This is the color displayed when the button is pressed down.
+const DIALOG_BTN_DOWN_COLOR: Color = Color::from_rgb(224,255,255);
+
 /// This enum is specifically intended for message passing from
 /// the GUI to the main function. This is done with Sender and 
 /// Receiver objects created in initialize().
@@ -87,6 +122,20 @@ pub struct GUI {
     ux_output_box: Rc<RefCell<TextEditor>>,
     /// A reference to the path of a potential output path chosen by the user.
     last_output_path: Rc<RefCell<Option<PathBuf>>>,
+    /// The group holding all the configuration controls.
+    /// This is stored here in order to disable during dialog.
+    ux_config_group: Group,
+    /// The group holding all the input and output controls.
+    /// This is stored her in order to disable during dialog.
+    ux_io_controls_group: Group,
+    /// The group holding the custom dialog controls.  
+    /// This is stored here to enable during dialog.
+    ux_dialog_group: Group,
+    /// The display which shows dialog messages to the user.
+    ux_dialog_box: TextDisplay,
+    /// The flex which holds buttons corresponding to the 
+    /// dialog choices available to a user.
+    ux_dialog_btns_flx: Flex,
 }//end struct GUI
 
 impl GUI {
@@ -158,6 +207,96 @@ impl GUI {
     pub fn wait(&self) -> bool {
         self.app.wait()
     }//end wait(&self)
+
+    /// Resets group activations to ensure user can
+    /// interact with gui after dialog has eneded.
+    pub fn clear_integrated_dialog(&mut self) {
+        self.ux_io_controls_group.activate();
+        self.ux_config_group.activate();
+        self.ux_dialog_group.deactivate();
+        self.ux_dialog_box.buffer().unwrap_or_else(|| TextBuffer::default()).set_text("");
+        self.ux_dialog_btns_flx.clear();
+        self.ux_dialog_btns_flx.redraw();
+    }//end clear_integrated_dialog()
+
+    /// Deactivates most of the gui so that user
+    /// is forced to interact with dialog
+    fn activate_dialog(&mut self) {
+        self.ux_io_controls_group.deactivate();
+        self.ux_config_group.deactivate();
+        self.ux_dialog_group.activate();
+    }//end activate_dialog()
+
+    /// Creates a modal dialog message that is integrated into
+    /// the main window of the application.
+    pub fn integrated_dialog_message(&mut self, txt: &str) {
+        self.integrated_dialog_message_choice(txt, vec!["Ok"]);
+    }//end integrated_dialog_message()
+
+    /// Creates a modal error message that is integrated into the
+    /// main window of the application.
+    pub fn integrated_dialog_alert(&mut self, txt: &str) {
+        dialog::beep(BeepType::Error);
+        self.integrated_dialog_message(txt);
+    }//end integrated_dialog_alert()
+
+    /// Creates a modal dialog message which forces the user
+    /// to ask a yes or no question.
+    pub fn integrated_dialog_yes_no(&mut self, txt: &str) -> bool {
+        match self.integrated_dialog_message_choice(txt, vec!["yes","no"]) {
+            Some(idx) => idx == 0,
+            None => false,
+        }//end matching whether selection was yes or no
+    }//end integrated_dialog_yes_no()
+
+    /// Creates a modal dialog message which forces the user to choose
+    /// between the options specified.  
+    /// The buttons for options have auto-generated sizes, so if there are too
+    /// many options, or they are too wordy, text might not be readable.  
+    /// If this function is passed an empty vec for options, it will immediately
+    /// return None. Without any options to end dialog, the user wouldn't be able
+    /// to continue.
+    pub fn integrated_dialog_message_choice(&mut self, txt: &str, options: Vec<&str>) -> Option<usize> {
+        self.activate_dialog();
+        // input validation for options being empty
+        if options.len() == 0 {return None;}
+        // update text based on parameter
+        let mut dialog_buffer = self.ux_dialog_box.buffer().unwrap_or_else(|| TextBuffer::default());
+        dialog_buffer.set_text(txt);
+        self.ux_dialog_box.set_buffer(dialog_buffer);
+        // update buttons based on type
+        let button_pressed_index = Rc::from(RefCell::from(None));
+
+        self.ux_dialog_btns_flx.clear();
+        for (idx, option) in options.iter().enumerate() {
+            let mut button = Button::default().with_label(option);
+            button.set_frame(DIALOG_BTN_FRAME);
+            button.set_down_frame(DIALOG_BTN_DOWN_FRAME);
+            button.set_color(DIALOG_BTN_COLOR);
+            button.set_selection_color(DIALOG_BTN_DOWN_COLOR);
+            button.set_callback({
+                let button_index_ref = (&button_pressed_index).clone();
+                move |_| {
+                    let mut button_index = button_index_ref.borrow_mut();
+                    *button_index = Some(idx);
+                }//end closure
+            });
+            self.ux_dialog_btns_flx.add(&button);
+        }//end creating each button and handler
+        self.ux_dialog_btns_flx.redraw();
+
+        // wait for user to click a button
+        let button_pressed_index_ref = (&button_pressed_index).clone();
+        let mut button_index_to_return = None;
+        while self.app.wait() {
+            if let Ok(pushed_index) = button_pressed_index_ref.try_borrow() {
+                if pushed_index.is_some() {button_index_to_return = pushed_index.clone(); break;}
+            }
+        }//end continuing application while we wait for button to be pressed
+
+        self.clear_integrated_dialog();
+        return button_index_to_return;
+    }//end integrated_dialog_message(self, txt)
 
     /// Sets up all the properties and appearances of
     /// various widgets and UI settings.
@@ -290,7 +429,34 @@ impl GUI {
         dialog_group.end();
         dialog_group.set_frame(GROUP_FRAME);
         dialog_group.set_color(DIALOG_GROUP_COLOR);
+        dialog_group.deactivate();
         tile_group.add(&dialog_group);
+
+        let mut dialog_buf = TextBuffer::default();
+        let mut dialog_box = TextDisplay::default()
+            .with_pos(dialog_group.x() + (DIALOG_BOX_PADDING / 2), dialog_group.y() + (DIALOG_BOX_PADDING / 2))
+            .with_size(dialog_group.w() - DIALOG_BOX_PADDING, dialog_group.height() - DIALOG_BOX_PADDING - DIALOG_BTNS_HEIGHT)
+            .with_align(Align::Inside);
+        dialog_box.set_text_color(DIALOG_BOX_TEXT_COLOR);
+        dialog_box.set_color(DIALOG_BOX_COLOR);
+        dialog_box.set_frame(DIALOG_BOX_FRAME);
+        dialog_box.wrap_mode(DIALOG_BOX_WRAP_MODE, DIALOG_BOX_WRAP_MARGIN);
+        dialog_box.set_scrollbar_align(DIALOG_BOX_SCROLL_ALIGN);
+        dialog_box.set_scrollbar_size(DIALOG_BOX_SCROLL_SIZE);
+        dialog_box.set_text_size(DIALOG_BOX_TEXT_SIZE);
+        dialog_buf.set_text("");
+        dialog_box.set_buffer(dialog_buf);
+        dialog_group.add(&dialog_box);
+
+        let mut dialog_btns = Flex::default()
+            .with_pos(dialog_box.x(), dialog_box.y() + dialog_box.h() + (DIALOG_BOX_PADDING / 2))
+            .with_size(dialog_box.w(), dialog_group.h() - dialog_box.h() - DIALOG_BOX_PADDING)
+            .with_align(Align::Right)
+            .with_type(FlexType::Row);
+        dialog_btns.end();
+        dialog_btns.set_color(DIALOG_BTNS_BACK_COLOR);
+        dialog_btns.set_frame(DIALOG_BTNS_BACK_FRAME);
+        dialog_group.add(&dialog_btns);
 
         // set up callbacks and reference stuff
         let input_box_ref = Rc::from(RefCell::from(input_box));
@@ -370,6 +536,11 @@ impl GUI {
             last_input_paths: last_input_path_ref,
             ux_output_box: output_box_ref,
             last_output_path: last_output_path_ref,
+            ux_config_group: config_group,
+            ux_io_controls_group: io_controls_group,
+            ux_dialog_group: dialog_group,
+            ux_dialog_box: dialog_box,
+            ux_dialog_btns_flx: dialog_btns,
         }//end struct construction
     }//end initialize()
 }//end impl for GUI
