@@ -68,15 +68,24 @@ pub enum InterfaceMessage {
     ConfigReset
 }//end enum InterfaceMessage
 
+/// This struct holds together all the objects and functions for manipulating and using the GUI.
 #[allow(dead_code)]
 pub struct GUI {
+    /// The main app object. Has some misc useful functions.
     app: App,
+    /// The main window of the application.
     ux_main_window: Window,
+    /// The sender used for sending messages back to main.
     msg_sender: Sender<InterfaceMessage>,
+    /// The receiver handed to main in order to receive messages from the sender.
     msg_receiver: Receiver<InterfaceMessage>,
+    /// A reference to the TextBox that shows the input files chosen by the user.
     ux_input_box: Rc<RefCell<TextDisplay>>,
+    /// A reference to a vec containing the paths of any input files chosen by the user.
     last_input_paths: Rc<RefCell<Vec<PathBuf>>>,
+    /// A reference to the TextBox that shows the output file chosen by the user.
     ux_output_box: Rc<RefCell<TextEditor>>,
+    /// A reference to the path of a potential output path chosen by the user.
     last_output_path: Rc<RefCell<Option<PathBuf>>>,
 }//end struct GUI
 
