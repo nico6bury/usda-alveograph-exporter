@@ -14,6 +14,16 @@ pub enum ReadStartMode {
     Index,
 }
 
+impl ReadStartMode {
+    /// Returns string representation of variant.
+    pub fn to_string(&self) -> String {
+        match self {
+            ReadStartMode::Header => "Header".to_string(),
+            ReadStartMode::Index => "Index".to_string(),
+        }//end matching self
+    }//end to_string()
+}//end impl for ReadStartMode
+
 /// An enum to represent different ways of reading rows after the header.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Hash, Deserialize, Serialize)]
 pub enum ReadRowMode {
@@ -25,6 +35,16 @@ pub enum ReadRowMode {
     /// a specified amount of rows after the Start Header before exiting.
     Max,
 }//end enum ReadRowMode
+
+impl ReadRowMode {
+    /// Returns string representation of variant.
+    pub fn to_string(&self) -> String {
+        match self {
+            ReadRowMode::Header => "Header".to_string(),
+            ReadRowMode::Max => "Max".to_string(),
+        }//end matching self
+    }//end to_string()
+}//end impl for ReadRowMode
 
 /// This struct is meant to store configuration information
 /// in a way that is not reliant on a specific ui implementation,
