@@ -163,6 +163,14 @@ impl GUI {
         last_output_path.clone()
     }//end get_last_output_paths()
 
+    /// Gets the text from the box showing the output path/file.
+    pub fn get_output_path_text(&self) -> String {
+        let output_box_ref = (&self.ux_output_box).clone();
+        let output_box = output_box_ref.as_ref().borrow();
+        let output_buf = output_box.buffer().unwrap_or_else(|| TextBuffer::default());
+        return output_buf.text();
+    }//end get_output_path_text()
+
     /// Clears all memory or display of currently stored input paths.
     pub fn clear_last_input_paths(&mut self) {
         let last_input_paths_ref = (&self.last_input_paths).clone();
