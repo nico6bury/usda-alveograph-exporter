@@ -1,7 +1,7 @@
 use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
 use alveograph_exporter::config_store::ConfigStore;
-use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, BeepType, FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, prelude::{ButtonExt, DisplayExt, GroupExt, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor, WrapMode}, window::{self, Window}};
+use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, BeepType, FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, menu::Choice, prelude::{ButtonExt, DisplayExt, GroupExt, MenuExt, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor, WrapMode}, window::{self, Window}};
 
 /// Width in pixels of the main window
 const WINDOW_WIDTH: i32 = 700;
@@ -97,6 +97,31 @@ const DIALOG_BTN_COLOR: Color = Color::from_rgb(245,245,245);
 /// This is the color displayed when the button is pressed down.
 const DIALOG_BTN_DOWN_COLOR: Color = Color::from_rgb(224,255,255);
 
+/// The amount of horizontal padding in pixels to apply to choices in the config section.
+const CONF_CHOICE_HOR_PADDING: i32 = 5;
+/// The amount of vertical padding in pixels to apply to choices in the config section.
+const CONF_CHOICE_VER_PADDING: i32 = 20;
+/// The height in pixels of each choice in the config section.
+const CONF_CHOICE_HEIGHT: i32 = 20;
+/// The alignment of the label for each choice in the config section.
+const CONF_CHOICE_ALIGN: Align = Align::Top;
+/// The color of the drop down arrow in each choice in the config section.
+const CONF_CHOICE_COLOR: Color = Color::Light1;
+/// The color of selections in each choice in the config section.
+const CONF_CHOICE_SELECTION_COLOR: Color = Color::from_rgb(248,248,255);
+/// The size of text in each choice in the config section.
+const CONF_CHOICE_TEXT_SIZE: i32 = 14;
+/// The color of text in each choice in the config section.
+const CONF_CHOICE_TEXT_COLOR: Color = Color::Black;
+/// The frame for the whole menu in each choice in the config section.
+const CONF_CHOICE_MENU_FRAME: FrameType = FrameType::FlatBox;
+/// The frame for the selected item in each choice in the config section.
+const CONF_CHOICE_SELECTION_FRAME: FrameType = FrameType::GtkThinUpBox;
+/// The size of the label for each choice in the config section.
+const CONF_CHOICE_LABEL_SIZE: i32 = 14;
+/// The color of the label for each choice in the config section.
+const CONF_CHOICE_LABEL_COLOR: Color = Color::Black;
+
 /// This enum is specifically intended for message passing from
 /// the GUI to the main function. This is done with Sender and 
 /// Receiver objects created in initialize().
@@ -143,6 +168,10 @@ pub struct GUI {
     /// The flex which holds buttons corresponding to the 
     /// dialog choices available to a user.
     ux_dialog_btns_flx: Flex,
+    /// The choice which displays options for the ReadStartMode.
+    ux_cf_read_start_mode_choice: Choice,
+    /// The choice which displays options for the ReadRowMode.
+    ux_cf_read_row_mode_choice: Choice,
 }//end struct GUI
 
 impl GUI {
@@ -159,8 +188,21 @@ impl GUI {
     }//end get_config_store()
 
     /// Updates the gui to show the given configuration settings
-    pub fn set_config_store(&self, config: &ConfigStore) {
+    pub fn set_config_store(&mut self, config: &ConfigStore) -> Result<(),String> {
         // TODO: finish implementation
+        // self.ux_cf_read_start_mode_choice.
+        // self.ux_cf_read_start_mode_choice.find_item(name)
+        // self.ux_cf_read_start_mode_choice.set_item(item)
+        match self.ux_cf_read_start_mode_choice.find_item(&config.read_start_mode.to_string()) {
+            Some(menu_item) => {self.ux_cf_read_start_mode_choice.set_item(&menu_item);},
+            None => return Err("".to_string()),
+        };
+        match self.ux_cf_read_row_mode_choice.find_item(&config.read_row_mode.to_string()) {
+            Some(menu_item) => {self.ux_cf_read_row_mode_choice.set_item(&menu_item);},
+            None => return Err("".to_string()),
+        };
+
+        Ok(())
     }//end set_config_store()
 
     /// Creates formatted strings holding the version number and date this
@@ -461,6 +503,48 @@ impl GUI {
         config_group.set_color(CONFIG_GROUP_COLOR);
         tile_group.add(&config_group);
 
+        let mut config_group_label = Frame::default()
+            .with_pos(config_group.x(), config_group.y() + 10)
+            .with_size(config_group.width(), 20)
+            .with_align(Align::Center)
+            .with_label("Configuration Settings");
+        config_group_label.set_label_size(16);
+        config_group.add(&config_group_label);
+
+        let mut read_start_mode_choice = Choice::default()
+            .with_pos(config_group.x() + CONF_CHOICE_HOR_PADDING, config_group_label.y() + config_group_label.h() + CONF_CHOICE_VER_PADDING)
+            .with_size((config_group.width() / 2) - (CONF_CHOICE_HOR_PADDING * 2), CONF_CHOICE_HEIGHT)
+            .with_align(CONF_CHOICE_ALIGN)
+            .with_label("Read Start Mode");
+        read_start_mode_choice.add_choice("Header|Index");
+        read_start_mode_choice.set_color(CONF_CHOICE_COLOR);
+        read_start_mode_choice.set_selection_color(CONF_CHOICE_SELECTION_COLOR);
+        read_start_mode_choice.set_text_color(CONF_CHOICE_TEXT_COLOR);
+        read_start_mode_choice.set_frame(CONF_CHOICE_MENU_FRAME);
+        read_start_mode_choice.set_down_frame(CONF_CHOICE_SELECTION_FRAME);
+        read_start_mode_choice.set_label_size(CONF_CHOICE_LABEL_SIZE);
+        read_start_mode_choice.set_label_color(CONF_CHOICE_LABEL_COLOR);
+        read_start_mode_choice.set_text_size(CONF_CHOICE_TEXT_SIZE);
+        read_start_mode_choice.clear_visible_focus();
+        config_group.add(&read_start_mode_choice);
+
+        let mut read_row_mode_choice = Choice::default()
+            .with_pos(config_group.x() + (config_group.w() / 2) + CONF_CHOICE_HOR_PADDING, config_group_label.y() + config_group_label.h() + CONF_CHOICE_VER_PADDING)
+            .with_size(read_start_mode_choice.width(), CONF_CHOICE_HEIGHT)
+            .with_align(CONF_CHOICE_ALIGN)
+            .with_label("Read Row Mode");
+        read_row_mode_choice.add_choice("Header|Max");
+        read_row_mode_choice.set_color(CONF_CHOICE_COLOR);
+        read_row_mode_choice.set_selection_color(CONF_CHOICE_SELECTION_COLOR);
+        read_row_mode_choice.set_text_color(CONF_CHOICE_TEXT_COLOR);
+        read_row_mode_choice.set_frame(CONF_CHOICE_MENU_FRAME);
+        read_row_mode_choice.set_down_frame(CONF_CHOICE_SELECTION_FRAME);
+        read_row_mode_choice.set_label_size(CONF_CHOICE_LABEL_SIZE);
+        read_row_mode_choice.set_label_color(CONF_CHOICE_LABEL_COLOR);
+        read_row_mode_choice.set_text_size(CONF_CHOICE_TEXT_SIZE);
+        read_row_mode_choice.clear_visible_focus();
+        config_group.add(&read_row_mode_choice);
+
         // set up group for integrated dialog
         let mut dialog_group = Group::default()
             .with_pos(io_controls_group.x(), io_controls_group.y() + io_controls_group.h())
@@ -580,6 +664,8 @@ impl GUI {
             ux_dialog_group: dialog_group,
             ux_dialog_box: dialog_box,
             ux_dialog_btns_flx: dialog_btns,
+            ux_cf_read_start_mode_choice: read_start_mode_choice,
+            ux_cf_read_row_mode_choice: read_row_mode_choice,
         }//end struct construction
     }//end initialize()
 }//end impl for GUI
