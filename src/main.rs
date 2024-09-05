@@ -17,6 +17,8 @@ fn main() {
 
     // make sure we get config information, update gui, walk user through fix if necessary
     ensure_config_valid(&mut gui, &mut config_store, &mut config_path, config_name);
+    // update gui with given config store
+    gui.set_config_store(&config_store);
 
     while gui.wait() {
         match recv.recv() {
@@ -31,9 +33,12 @@ fn main() {
                 let output_path = validate_output_path(output_path, &mut gui);
                 if !input_valid || output_path.is_err() {continue;}
                 let _output_path = output_path.expect("We already checked it wasn't an error.");
+                // grab configuration details from the gui
+                config_store = gui.get_config_store();
                 // proceed with processing calls
                 gui.start_wait();
                 println!("//TODO: Processing stuff");
+                println!("{}", config_store.read_start_header);
 
                 // perform cleanup after finishing processing
                 gui.clear_last_input_paths();
@@ -92,7 +97,6 @@ fn validate_output_path(output_path: Option<PathBuf>, gui: &mut GUI) -> Result<P
 
 /// Gets the config information from the config file.
 /// If we encounter issues with that, lets the user know through the gui.
-/// Also tells the gui about the config we've gotten.
 fn ensure_config_valid(
     gui: &mut GUI,
     config_store: &mut ConfigStore,
@@ -107,7 +111,6 @@ fn ensure_config_valid(
             if !config_path_tmp.exists() {
                 match config_store::try_write_config(&config_path_tmp, &config_store) {
                     Ok(_) => {
-                        // TODO: Set configstore in the GUI
                         *config_path = Some(config_path_tmp);
                     },
                     Err(msg) => gui.integrated_dialog_alert(&format!("I couldn't find an exisitng configuration file, so I tried creating one, but that also failed...\nYou can use the default config, but it won't be saved when you exit.\nIf you contine seeing this message, please contact the developer. Error message below:\n{}", msg)),

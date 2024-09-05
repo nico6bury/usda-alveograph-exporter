@@ -1,5 +1,6 @@
 use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
+use alveograph_exporter::config_store::ConfigStore;
 use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, BeepType, FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, prelude::{ButtonExt, DisplayExt, GroupExt, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor, WrapMode}, window::{self, Window}};
 
 /// Width in pixels of the main window
@@ -150,6 +151,17 @@ impl GUI {
     pub fn get_receiver(&self) -> Receiver<InterfaceMessage> {
         return self.msg_receiver.clone();
     }//end get_receiver(self)
+
+    /// Gets a config store that represents the configuratino chosen
+    /// by the user.
+    pub fn get_config_store(&self) -> ConfigStore {
+        ConfigStore::default() // TODO: finish implementation
+    }//end get_config_store()
+
+    /// Updates the gui to show the given configuration settings
+    pub fn set_config_store(&self, config: &ConfigStore) {
+        // TODO: finish implementation
+    }//end set_config_store()
 
     /// Creates formatted strings holding the version number and date this
     /// application was compiled.
