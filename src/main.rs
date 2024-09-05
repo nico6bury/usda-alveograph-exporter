@@ -18,7 +18,7 @@ fn main() {
     // make sure we get config information, update gui, walk user through fix if necessary
     ensure_config_valid(&mut gui, &mut config_store, &mut config_path, config_name);
     // update gui with given config store
-    gui.set_config_store(&config_store);
+    let _ = gui.set_config_store(&config_store);
 
     while gui.wait() {
         match recv.recv() {
