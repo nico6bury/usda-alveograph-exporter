@@ -11,6 +11,12 @@ const WINDOW_HEIGHT: i32 = 380;
 const GROUP_FRAME: FrameType = FrameType::GtkThinUpBox;
 /// Background color (set_color()) for the major group of headers information
 const HEADER_GROUP_COLOR: Color = Color::from_rgb(255,250,240);
+/// The width in pixels of the header group. 
+/// This will affect the sizes of other groups.
+const HEADER_GROUP_WIDTH: i32 = 450;
+/// The height in pixels of the header group. 
+/// This will affect the sizes of other groups.
+const HEADER_GROUP_HEIGHT: i32 = 90;
 /// Background color (set_color()) for the major group of io controls
 const IO_CONTROLS_GROUP_COLOR: Color = Color::from_rgb(245,255,250);
 /// Background color (set_color()) for the major group of config settings
@@ -144,6 +150,19 @@ impl GUI {
     pub fn get_receiver(&self) -> Receiver<InterfaceMessage> {
         return self.msg_receiver.clone();
     }//end get_receiver(self)
+
+    /// Creates formatted strings holding the version number and date this
+    /// application was compiled.
+    /// 
+    /// Used to build the header.
+    fn header_version_day() -> (String,String) {
+        let version = option_env!("CARGO_PKG_VERSION");
+        let format_des = time::macros::format_description!("[month repr:long] [year]");
+        let date = compile_time::date!();
+        let date_str = date.format(format_des).unwrap_or_else(|_| String::from("unknown compile time"));
+        let version_str = format!("{}", version.unwrap_or("unknown version"));
+        return (version_str, date_str);
+    }//end header_version_day
 
     /// Gets the last set of input file paths from the gui.  
     /// If there weren't any, it might be empty.  
@@ -327,7 +346,7 @@ impl GUI {
         // set up header information
         let mut header_group = Flex::default()
             .with_pos(0,0)
-            .with_size(tile_group.w() / 7 * 4, 90);
+            .with_size(HEADER_GROUP_WIDTH, HEADER_GROUP_HEIGHT);
         header_group.end();
         header_group.set_frame(GROUP_FRAME);
         header_group.set_color(HEADER_GROUP_COLOR);
@@ -335,14 +354,14 @@ impl GUI {
         tile_group.add(&header_group);
 
         let mut header_label1 = Frame::default()
-            .with_label("USDA Alveograph Exporter")
+            .with_label(&format!("USDA Alveograph Exporter\tv{}\t{}", GUI::header_version_day().0, GUI::header_version_day().1))
             .with_align(HEADER_LABEL_ALIGN);
         header_label1.set_label_size(18);
         header_label1.set_label_type(fltk::enums::LabelType::Embossed);
         header_label1.set_label_color(HEADER_LABEL_COLOR);
         header_group.add(&header_label1);
         let mut header_label2 = Frame::default()
-            .with_label("Processes txt files from the Alveograph Program\nNicholas Sixbury/Dan Brabec\tUSDA-ARS Manhattan,KS")
+            .with_label("Processes txt files from the Alveograph Machine\nNicholas Sixbury/Dan Brabec\tUSDA-ARS Manhattan,KS")
             .with_align(HEADER_LABEL_ALIGN);
         header_label2.set_label_color(HEADER_LABEL_COLOR);
         header_group.add(&header_label2);
@@ -350,7 +369,7 @@ impl GUI {
         // set up group with input and output controls, processing stuff
         let mut io_controls_group = Group::default()
             .with_pos(0, header_group.y() + header_group.h())
-            .with_size(tile_group.w() / 7 * 4, tile_group.h() - header_group.h() - 125);
+            .with_size(header_group.width(), tile_group.h() - header_group.h() - 125);
         io_controls_group.end();
         io_controls_group.set_frame(GROUP_FRAME);
         io_controls_group.set_color(IO_CONTROLS_GROUP_COLOR);
