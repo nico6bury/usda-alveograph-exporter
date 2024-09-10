@@ -124,6 +124,8 @@ const CONF_CHOICE_LABEL_COLOR: Color = Color::Black;
 
 /// The frame for input widgets in the config section.
 const CONF_INPUT_FRAME: FrameType = FrameType::GleamRoundUpBox;
+/// The size in pixels of the scrollbar for input widgets in the config section.
+const CONF_INPUT_SCROLLBAR_SIZE: i32 = 5;
 
 /// This enum is specifically intended for message passing from
 /// the GUI to the main function. This is done with Sender and 
@@ -179,6 +181,8 @@ pub struct GUI {
     ux_cf_read_start_idx_input: IntInput,
 
     ux_cf_read_rows_max_input: IntInput,
+
+    ux_cf_read_start_header_box: TextEditor,
 }//end struct GUI
 
 impl GUI {
@@ -223,6 +227,10 @@ impl GUI {
             Ok(read_rows_max) => config.read_max_rows = read_rows_max,
         }//end matching whether the parse fails (it really shouldn't) for read_rows_max
 
+        match self.ux_cf_read_start_header_box.buffer() {
+            None => {},
+            Some(buf) => config.read_start_header = buf.text(),
+        }//end matching whether or not we can access buffer for read_start_header
 
         Ok(config) // TODO: finish implementation
     }//end get_config_store()
@@ -241,6 +249,10 @@ impl GUI {
 
         self.ux_cf_read_start_idx_input.set_value(&config.read_start_idx.to_string());
         self.ux_cf_read_rows_max_input.set_value(&config.read_max_rows.to_string());
+
+        let mut buf = self.ux_cf_read_start_header_box.buffer().unwrap_or_else(|| TextBuffer::default());
+        buf.set_text(&config.read_start_header);
+        self.ux_cf_read_start_header_box.set_buffer(buf);
 
         Ok(())
     }//end set_config_store()
@@ -601,6 +613,18 @@ impl GUI {
         read_rows_max_input.set_frame(CONF_INPUT_FRAME);
         config_group.add(&read_rows_max_input);
 
+        let read_start_header_buf = TextBuffer::default();
+        let mut read_start_header_box = TextEditor::default()
+            .with_pos(read_start_idx_input.x(), read_start_idx_input.y() + read_start_idx_input.h() + CONF_CHOICE_VER_PADDING)
+            .with_size(read_rows_max_input.x() - read_start_idx_input.x() + read_rows_max_input.w(), read_start_mode_choice.h() + CONF_INPUT_SCROLLBAR_SIZE)
+            .with_align(CONF_CHOICE_ALIGN)
+            .with_label("Read Start Header");
+        read_start_header_box.set_frame(CONF_INPUT_FRAME);
+        read_start_header_box.set_scrollbar_align(Align::Bottom);
+        read_start_header_box.set_scrollbar_size(CONF_INPUT_SCROLLBAR_SIZE);
+        read_start_header_box.set_buffer(read_start_header_buf);
+        config_group.add(&read_start_header_box);
+
         // set up group for integrated dialog
         let mut dialog_group = Group::default()
             .with_pos(io_controls_group.x(), io_controls_group.y() + io_controls_group.h())
@@ -724,6 +748,7 @@ impl GUI {
             ux_cf_read_row_mode_choice: read_row_mode_choice,
             ux_cf_read_start_idx_input: read_start_idx_input,
             ux_cf_read_rows_max_input: read_rows_max_input,
+            ux_cf_read_start_header_box: read_start_header_box,
         }//end struct construction
     }//end initialize()
 }//end impl for GUI
