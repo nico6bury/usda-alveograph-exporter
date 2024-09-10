@@ -96,7 +96,7 @@ pub struct ConfigStore {
 impl Default for ConfigStore {
     fn default() -> Self {
         let read_row_headers = vec![
-                "P","L","G","P/L","Ie","K",
+                "P","L","G","W","P/L","Ie","K",
                 "SH","Dmin","Dmax","H20",
             ].iter().map(|str| str.to_string()).collect();
         let row_order_preference = vec![
