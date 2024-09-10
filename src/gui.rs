@@ -132,6 +132,10 @@ const CONF_MULTI_INPUT_LINENUMBER_SIZE: i32 = 10;
 const CONF_MULTI_INPUT_LINENUMBER_WIDTH: i32 = 15;
 /// The alignment to use for multi-line inputs in the config group.
 const CONF_MULIT_INPUT_SCROLLBAR_ALIGN: Align = Align::Right;
+/// The frame to use for buttons in the config section.
+const CONF_BTN_FRAME: FrameType = FrameType::GleamRoundUpBox;
+/// The down_frame to use for buttons in the config section.
+const CONF_BTN_DOWN_FRAME: FrameType = FrameType::GleamRoundDownBox;
 
 /// This enum is specifically intended for message passing from
 /// the GUI to the main function. This is done with Sender and 
@@ -656,7 +660,7 @@ impl GUI {
 
         let mut cf_multiline_flex = Flex::default()
             .with_pos(read_start_header_box.x(), read_start_header_box.y() + read_start_header_box.h() + CONF_CHOICE_VER_PADDING)
-            .with_size(read_start_header_box.w(), config_group.h() - read_start_header_box.y() - read_start_header_box.h() - CONF_CHOICE_VER_PADDING - CONF_CHOICE_HOR_PADDING)
+            .with_size(read_start_header_box.w(), config_group.h() - read_start_header_box.y() - read_start_header_box.h() - (CONF_CHOICE_VER_PADDING * 2) - (CONF_CHOICE_HOR_PADDING * 2))
             .with_type(FlexType::Row);
         config_group.add_resizable(&cf_multiline_flex);
 
@@ -685,6 +689,28 @@ impl GUI {
         row_order_pref_box.set_scrollbar_size(CONF_INPUT_SCROLLBAR_SIZE);
         row_order_pref_box.set_cursor_style(fltk::text::Cursor::Simple);
         cf_multiline_flex.add(&row_order_pref_box);
+
+        let mut cf_button_flex = Flex::default()
+            .with_pos(cf_multiline_flex.x(), cf_multiline_flex.y() + cf_multiline_flex.h())
+            .with_size(cf_multiline_flex.w(),config_group.h() - cf_multiline_flex.y() - cf_multiline_flex.h())
+            .with_type(FlexType::Row);
+        cf_button_flex.set_margins(0,CONF_CHOICE_HOR_PADDING,0,CONF_CHOICE_HOR_PADDING);
+        config_group.add(&cf_button_flex);
+
+        let mut cf_reset_btn = Button::default()
+            .with_label("Config Reset");
+        cf_reset_btn.set_frame(CONF_BTN_FRAME);
+        cf_reset_btn.set_down_frame(CONF_BTN_DOWN_FRAME);
+        cf_reset_btn.clear_visible_focus();
+        cf_reset_btn.emit(s, InterfaceMessage::ConfigReset);
+        cf_button_flex.add(&cf_reset_btn);
+
+        let mut cf_help_btn = Button::default()
+            .with_label("Config Help");
+        cf_help_btn.set_frame(CONF_BTN_FRAME);
+        cf_help_btn.set_down_frame(CONF_BTN_DOWN_FRAME);
+        cf_help_btn.clear_visible_focus();
+        cf_button_flex.add(&cf_help_btn);
 
         // set up group for integrated dialog
         let mut dialog_group = Group::default()
