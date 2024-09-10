@@ -1,7 +1,7 @@
 use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
 use alveograph_exporter::config_store::{ConfigStore, ReadRowMode, ReadStartMode};
-use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, BeepType, FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, input::IntInput, menu::Choice, prelude::{ButtonExt, DisplayExt, GroupExt, InputExt, MenuExt, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor, WrapMode}, window::{self, Window}};
+use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, BeepType, FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, Event, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, input::IntInput, menu::Choice, prelude::{ButtonExt, DisplayExt, GroupExt, InputExt, MenuExt, WidgetBase, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor, WrapMode}, window::{self, Window}};
 
 /// Width in pixels of the main window
 const WINDOW_WIDTH: i32 = 700;
@@ -188,13 +188,13 @@ pub struct GUI {
     /// The choice which displays options for the ReadRowMode.
     ux_cf_read_row_mode_choice: Choice,
     /// The input box that displays setting for read_start_idx
-    ux_cf_read_start_idx_input: IntInput,
+    ux_cf_read_start_idx_input: Rc<RefCell<IntInput>>,
     /// The input box that displays setting for read_rows_max
-    ux_cf_read_rows_max_input: IntInput,
+    ux_cf_read_rows_max_input: Rc<RefCell<IntInput>>,
     /// The text editor that displays setting for read_start_header
-    ux_cf_read_start_header_box: TextEditor,
+    ux_cf_read_start_header_box: Rc<RefCell<TextEditor>>,
     /// The text editor that displays setting for read_row_headers
-    ux_cf_read_row_headers_box: TextEditor,
+    ux_cf_read_row_headers_box: Rc<RefCell<TextEditor>>,
     /// The text editor that displays setting for row_order_pref
     ux_cf_row_order_pref_box: TextEditor,
 }//end struct GUI
@@ -211,76 +211,96 @@ impl GUI {
     pub fn get_config_store(&self) -> Result<ConfigStore,String> {
         let mut config = ConfigStore::default();
         
-        match self.ux_cf_read_start_mode_choice.menu() {
-            None => return Err(format!("Can't get menu for read_start_mode_choice")),
-            Some(menu) => match menu.label() {
-                None => return Err(format!("Couldn't get label for menu item {:?} in read_start_mode", menu)),
-                Some(label) => match ReadStartMode::from_str(&label) {
-                    None => return Err(format!("Couldn't determine ReadStartMode from string {}", label)),
-                    Some(start_mode) => config.read_start_mode = start_mode,
-                }//end matching to get variant from string
-            }//end matching to get label for choice
-        }//end matching to find read_start_mode
-        match self.ux_cf_read_row_mode_choice.menu() {
-            None => return Err(format!("Can't get menu for read_row_mode_choice")),
-            Some(menu) => match menu.label() {
-                None => return Err(format!("Couldn't get label for menu item {:?} in read_row_mode", menu)),
-                Some(label) => match ReadRowMode::from_str(&label) {
-                    None => return Err(format!("Couldn't determine ReadRowMode from string {}", label)),
-                    Some(row_mode) => config.read_row_mode = row_mode,
-                }//end matching to get variant from string
-            }//end matching to get label for choice
-        }//end matching to find read_start_mode
+        match self.ux_cf_read_start_mode_choice.value() {
+            0 => config.read_start_mode = ReadStartMode::Header,
+            1 => config.read_start_mode = ReadStartMode::Index,
+            _ => return Err(format!("Invalid read_start_mode menu choice {} !!!", self.ux_cf_read_start_mode_choice.value()))
+        }//end matching from value to variant for read_start_mode
+        match self.ux_cf_read_row_mode_choice.value() {
+            0 => config.read_row_mode = ReadRowMode::Header,
+            1 => config.read_row_mode = ReadRowMode::Max,
+            _ => return Err(format!("Invalid read_row_mode menu choice {} !!!", self.ux_cf_read_row_mode_choice.value()))
+        }// end matching from value to variant for read_row_mode
 
-        match self.ux_cf_read_start_idx_input.value().parse::<u16>() {
-            Err(msg) => return Err(format!("Couldn't parse read_start_idx due to {:?}", msg)),
-            Ok(read_start_idx) => config.read_start_idx = read_start_idx,
-        }//end matching whether the parse fails (it really shouldn't) for read_start_idx
-        match self.ux_cf_read_rows_max_input.value().parse::<u16>() {
-            Err(msg) => return Err(format!("Couldn't parse read_rows_max due to {:?}", msg)),
-            Ok(read_rows_max) => config.read_max_rows = read_rows_max,
-        }//end matching whether the parse fails (it really shouldn't) for read_rows_max
+        {
+            let read_start_idx_input_ref = (&self.ux_cf_read_start_idx_input).clone();
+            let read_start_idx_input = read_start_idx_input_ref.as_ref().borrow();
+            match read_start_idx_input.value().parse::<u16>() {
+                Err(msg) => return Err(format!("Couldn't parse read_start_idx due to {:?}", msg)),
+                Ok(read_start_idx) => config.read_start_idx = read_start_idx,
+            }//end matching whether the parse fails (it really shouldn't) for read_start_idx
+        }
+        {
+            let read_rows_max_input_ref = (&self.ux_cf_read_rows_max_input).clone();
+            let read_rows_max_input = read_rows_max_input_ref.as_ref().borrow();
+            match read_rows_max_input.value().parse::<u16>() {
+                Err(msg) => return Err(format!("Couldn't parse read_rows_max due to {:?}", msg)),
+                Ok(read_rows_max) => config.read_max_rows = read_rows_max,
+            }//end matching whether the parse fails (it really shouldn't) for read_rows_max
+        }
 
-        match self.ux_cf_read_start_header_box.buffer() {
-            None => {},
-            Some(buf) => config.read_start_header = buf.text(),
-        }//end matching whether or not we can access buffer for read_start_header
-
-        match self.ux_cf_read_row_headers_box.buffer() {
-            None => {},
-            Some(buf) => config.read_row_headers = buf.text().split("\n").map(|s| s.to_string()).collect(),
-        }//end matching whether or not we can access buffer for read_row_headers
+        {
+            let read_start_header_box_ref = (&self.ux_cf_read_start_header_box).clone();
+            let read_start_header_box = read_start_header_box_ref.as_ref().borrow();
+            match read_start_header_box.buffer() {
+                None => {},
+                Some(buf) => config.read_start_header = buf.text(),
+            }//end matching whether or not we can access buffer for read_start_header
+        }
+        {
+            let read_row_headers_box_ref = (&self.ux_cf_read_row_headers_box).clone();
+            let read_row_headers_box = read_row_headers_box_ref.as_ref().borrow();
+            match read_row_headers_box.buffer() {
+                None => {},
+                Some(buf) => config.read_row_headers = buf.text().split("\n").map(|s| s.to_string()).collect(),
+            }//end matching whether or not we can access buffer for read_row_headers
+        }
 
         match self.ux_cf_row_order_pref_box.buffer() {
             None => {},
             Some(buf) => config.row_order_preference = buf.text().split("\n").map(|s| s.to_string()).collect(),
         }//end matching whether or not we can access buffer for row_order_preference
 
-        Ok(config) // TODO: finish implementation
+        Ok(config)
     }//end get_config_store()
 
     /// Updates the gui to show the given configuration settings
     pub fn set_config_store(&mut self, config: &ConfigStore) -> Result<(),String> {
-        // TODO: finish implementation
-        match self.ux_cf_read_start_mode_choice.find_item(&config.read_start_mode.to_string()) {
-            Some(menu_item) => {self.ux_cf_read_start_mode_choice.set_item(&menu_item);},
-            None => return Err("".to_string()),
-        };
-        match self.ux_cf_read_row_mode_choice.find_item(&config.read_row_mode.to_string()) {
-            Some(menu_item) => {self.ux_cf_read_row_mode_choice.set_item(&menu_item);},
-            None => return Err("".to_string()),
-        };
+        match config.read_start_mode {
+            ReadStartMode::Header => {let _ = self.ux_cf_read_start_mode_choice.set_value(0);},
+            ReadStartMode::Index => {let _ = self.ux_cf_read_start_mode_choice.set_value(1);},
+        }
+        match config.read_row_mode {
+            ReadRowMode::Header => {let _ = self.ux_cf_read_row_mode_choice.set_value(0);},
+            ReadRowMode::Max => {let _ = self.ux_cf_read_row_mode_choice.set_value(1);},
+        }
 
-        self.ux_cf_read_start_idx_input.set_value(&config.read_start_idx.to_string());
-        self.ux_cf_read_rows_max_input.set_value(&config.read_max_rows.to_string());
+        {
+            let read_start_idx_input_ref = (&self.ux_cf_read_start_idx_input).clone();
+            let mut read_start_idx_input = read_start_idx_input_ref.as_ref().borrow_mut();
+            read_start_idx_input.set_value(&config.read_start_idx.to_string());
+        }
+        {
+            let read_rows_max_input_ref = (&self.ux_cf_read_rows_max_input).clone();
+            let mut read_rows_max_input = read_rows_max_input_ref.as_ref().borrow_mut();
+            read_rows_max_input.set_value(&config.read_max_rows.to_string());
+        }
 
-        let mut buf1 = self.ux_cf_read_start_header_box.buffer().unwrap_or_else(|| TextBuffer::default());
-        buf1.set_text(&config.read_start_header);
-        self.ux_cf_read_start_header_box.set_buffer(buf1);
+        {
+            let read_start_header_box_ref = (&self.ux_cf_read_start_header_box).clone();
+            let mut read_start_header_box = read_start_header_box_ref.as_ref().borrow_mut();
+            let mut buf = read_start_header_box.buffer().unwrap_or_else(|| TextBuffer::default());
+            buf.set_text(&config.read_start_header);
+            read_start_header_box.set_buffer(buf);
+        }
 
-        let mut buf2 = self.ux_cf_read_row_headers_box.buffer().unwrap_or_else(|| TextBuffer::default());
-        buf2.set_text(&config.read_row_headers.join("\n"));
-        self.ux_cf_read_row_headers_box.set_buffer(buf2);
+        {
+            let read_row_headers_box_ref = (&self.ux_cf_read_row_headers_box).clone();
+            let mut read_row_headers_box = read_row_headers_box_ref.as_ref().borrow_mut();
+            let mut buf = read_row_headers_box.buffer().unwrap_or_else(|| TextBuffer::default());
+            buf.set_text(&config.read_row_headers.join("\n"));
+            read_row_headers_box.set_buffer(buf);
+        }
 
         let mut buf3 = self.ux_cf_row_order_pref_box.buffer().unwrap_or_else(|| TextBuffer::default());
         buf3.set_text(&config.row_order_preference.join("\n"));
@@ -610,6 +630,7 @@ impl GUI {
         read_start_mode_choice.set_label_color(CONF_CHOICE_LABEL_COLOR);
         read_start_mode_choice.set_text_size(CONF_CHOICE_TEXT_SIZE);
         read_start_mode_choice.clear_visible_focus();
+        read_start_mode_choice.set_value(0);
         config_group.add(&read_start_mode_choice);
 
         let mut read_row_mode_choice = Choice::default()
@@ -627,6 +648,7 @@ impl GUI {
         read_row_mode_choice.set_label_color(CONF_CHOICE_LABEL_COLOR);
         read_row_mode_choice.set_text_size(CONF_CHOICE_TEXT_SIZE);
         read_row_mode_choice.clear_visible_focus();
+        read_row_mode_choice.set_value(0);
         config_group.add(&read_row_mode_choice);
 
         let mut read_start_idx_input = IntInput::default()
@@ -815,6 +837,64 @@ impl GUI {
             }//end closure
         });
 
+        let read_start_idx_input_ref = Rc::from(RefCell::from(read_start_idx_input));
+        let read_start_header_box_ref = Rc::from(RefCell::from(read_start_header_box));
+
+        read_start_mode_choice.handle({
+            let read_start_idx_input_ref_clone = (&read_start_idx_input_ref).clone();
+            let read_start_header_box_ref_clone = (&read_start_header_box_ref).clone();
+            move |c,ev| {
+                match ev {
+                    Event::KeyUp | Event::Push | Event::Show => {
+                        let mut read_start_idx_input = read_start_idx_input_ref_clone.as_ref().borrow_mut();
+                        let mut read_start_header_box = read_start_header_box_ref_clone.as_ref().borrow_mut();
+                        match c.value() {
+                            0 => {
+                                read_start_idx_input.deactivate();
+                                read_start_header_box.activate();
+                            },
+                            1 => {
+                                read_start_idx_input.activate();
+                                read_start_header_box.deactivate();
+                            },
+                            _ => eprintln!("Unknown menu value {} for read_start_mode_choice!!!", c.value()),
+                        }//end matching value of choice
+                        true
+                    },
+                    _ => false,
+                }//end matching event
+            }//end closure
+        });
+
+        let read_rows_max_input_ref = Rc::from(RefCell::from(read_rows_max_input));
+        let read_row_headers_box_ref = Rc::from(RefCell::from(read_row_headers_box));
+
+        read_row_mode_choice.handle({
+            let read_rows_max_input_ref_clone = (&read_rows_max_input_ref).clone();
+            let read_row_headers_box_ref_clone = (&read_row_headers_box_ref).clone();
+            move |c,ev| {
+                match ev {
+                    Event::KeyUp | Event::Push | Event::Show => {
+                        let mut read_rows_max_input = read_rows_max_input_ref_clone.as_ref().borrow_mut();
+                        let mut read_row_headers_box = read_row_headers_box_ref_clone.as_ref().borrow_mut();
+                        match c.value() {
+                            0 => {
+                                read_rows_max_input.deactivate();
+                                read_row_headers_box.activate();
+                            },
+                            1 => {
+                                read_rows_max_input.activate();
+                                read_row_headers_box.deactivate();
+                            },
+                            _ => eprintln!("Unkown menu value {} for read_row_mode_choice!!!", c.value()),
+                        }
+                        true
+                    },
+                    _ => false,
+                }
+            }//end closure
+        });
+
         main_window.show();
         main_window.emit(s, InterfaceMessage::AppClosing);
         GUI {
@@ -833,10 +913,10 @@ impl GUI {
             ux_dialog_btns_flx: dialog_btns,
             ux_cf_read_start_mode_choice: read_start_mode_choice,
             ux_cf_read_row_mode_choice: read_row_mode_choice,
-            ux_cf_read_start_idx_input: read_start_idx_input,
-            ux_cf_read_rows_max_input: read_rows_max_input,
-            ux_cf_read_start_header_box: read_start_header_box,
-            ux_cf_read_row_headers_box: read_row_headers_box,
+            ux_cf_read_start_idx_input: read_start_idx_input_ref,
+            ux_cf_read_rows_max_input: read_rows_max_input_ref,
+            ux_cf_read_start_header_box: read_start_header_box_ref,
+            ux_cf_read_row_headers_box: read_row_headers_box_ref,
             ux_cf_row_order_pref_box: row_order_pref_box,
         }//end struct construction
     }//end initialize()
