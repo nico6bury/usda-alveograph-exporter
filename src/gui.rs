@@ -26,7 +26,7 @@ const CONFIG_GROUP_COLOR: Color = Color::from_rgb(220,239,220);
 const DIALOG_GROUP_COLOR: Color = Color::from_rgb(255,248,220);
 
 /// Alignment to use for labels in the header group
-const HEADER_LABEL_ALIGN: Align = Align::Inside.union(Align::Left);
+const HEADER_LABEL_ALIGN: Align = Align::Inside.union(Align::Center);
 /// Color (set_label_color()) to use for labels in the header group
 const HEADER_LABEL_COLOR: Color = Color::from_rgb(0,0,64);
 
