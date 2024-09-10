@@ -104,7 +104,7 @@ const CONF_CHOICE_VER_PADDING: i32 = 20;
 /// The height in pixels of each choice in the config section.
 const CONF_CHOICE_HEIGHT: i32 = 20;
 /// The alignment of the label for each choice in the config section.
-const CONF_CHOICE_ALIGN: Align = Align::Top;
+const CONF_CHOICE_ALIGN: Align = Align::TopLeft;
 /// The color of the drop down arrow in each choice in the config section.
 const CONF_CHOICE_COLOR: Color = Color::Light1;
 /// The color of selections in each choice in the config section.
@@ -558,7 +558,7 @@ impl GUI {
         let mut config_group_label = Frame::default()
             .with_pos(config_group.x(), config_group.y() + 10)
             .with_size(config_group.width(), 20)
-            .with_align(Align::Center)
+            .with_align(Align::Inside.union(Align::Left))
             .with_label("Configuration Settings");
         config_group_label.set_label_size(16);
         config_group.add(&config_group_label);
