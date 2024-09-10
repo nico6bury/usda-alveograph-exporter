@@ -230,9 +230,6 @@ impl GUI {
     /// Updates the gui to show the given configuration settings
     pub fn set_config_store(&mut self, config: &ConfigStore) -> Result<(),String> {
         // TODO: finish implementation
-        // self.ux_cf_read_start_mode_choice.
-        // self.ux_cf_read_start_mode_choice.find_item(name)
-        // self.ux_cf_read_start_mode_choice.set_item(item)
         match self.ux_cf_read_start_mode_choice.find_item(&config.read_start_mode.to_string()) {
             Some(menu_item) => {self.ux_cf_read_start_mode_choice.set_item(&menu_item);},
             None => return Err("".to_string()),
