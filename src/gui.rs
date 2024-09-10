@@ -183,15 +183,15 @@ pub struct GUI {
     ux_cf_read_start_mode_choice: Choice,
     /// The choice which displays options for the ReadRowMode.
     ux_cf_read_row_mode_choice: Choice,
-
+    /// The input box that displays setting for read_start_idx
     ux_cf_read_start_idx_input: IntInput,
-
+    /// The input box that displays setting for read_rows_max
     ux_cf_read_rows_max_input: IntInput,
-
+    /// The text editor that displays setting for read_start_header
     ux_cf_read_start_header_box: TextEditor,
-
+    /// The text editor that displays setting for read_row_headers
     ux_cf_read_row_headers_box: TextEditor,
-
+    /// The text editor that displays setting for row_order_pref
     ux_cf_row_order_pref_box: TextEditor,
 }//end struct GUI
 
