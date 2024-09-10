@@ -34,7 +34,7 @@ fn main() {
                 if !input_valid || output_path.is_err() {continue;}
                 let _output_path = output_path.expect("We already checked it wasn't an error.");
                 // grab configuration details from the gui
-                config_store = gui.get_config_store();
+                config_store = gui.get_config_store().unwrap();
                 // proceed with processing calls
                 gui.start_wait();
                 println!("//TODO: Processing stuff");

@@ -1,7 +1,7 @@
 use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
-use alveograph_exporter::config_store::ConfigStore;
-use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, BeepType, FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, menu::Choice, prelude::{ButtonExt, DisplayExt, GroupExt, MenuExt, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor, WrapMode}, window::{self, Window}};
+use alveograph_exporter::config_store::{ConfigStore, ReadRowMode, ReadStartMode};
+use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, BeepType, FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, input::IntInput, menu::Choice, prelude::{ButtonExt, DisplayExt, GroupExt, InputExt, MenuExt, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor, WrapMode}, window::{self, Window}};
 
 /// Width in pixels of the main window
 const WINDOW_WIDTH: i32 = 700;
@@ -122,6 +122,9 @@ const CONF_CHOICE_LABEL_SIZE: i32 = 14;
 /// The color of the label for each choice in the config section.
 const CONF_CHOICE_LABEL_COLOR: Color = Color::Black;
 
+/// The frame for input widgets in the config section.
+const CONF_INPUT_FRAME: FrameType = FrameType::GleamRoundUpBox;
+
 /// This enum is specifically intended for message passing from
 /// the GUI to the main function. This is done with Sender and 
 /// Receiver objects created in initialize().
@@ -172,6 +175,10 @@ pub struct GUI {
     ux_cf_read_start_mode_choice: Choice,
     /// The choice which displays options for the ReadRowMode.
     ux_cf_read_row_mode_choice: Choice,
+
+    ux_cf_read_start_idx_input: IntInput,
+
+    ux_cf_read_rows_max_input: IntInput,
 }//end struct GUI
 
 impl GUI {
@@ -183,8 +190,41 @@ impl GUI {
 
     /// Gets a config store that represents the configuratino chosen
     /// by the user.
-    pub fn get_config_store(&self) -> ConfigStore {
-        ConfigStore::default() // TODO: finish implementation
+    pub fn get_config_store(&self) -> Result<ConfigStore,String> {
+        let mut config = ConfigStore::default();
+        
+        match self.ux_cf_read_start_mode_choice.menu() {
+            None => return Err(format!("Can't get menu for read_start_mode_choice")),
+            Some(menu) => match menu.label() {
+                None => return Err(format!("Couldn't get label for menu item {:?} in read_start_mode", menu)),
+                Some(label) => match ReadStartMode::from_str(&label) {
+                    None => return Err(format!("Couldn't determine ReadStartMode from string {}", label)),
+                    Some(start_mode) => config.read_start_mode = start_mode,
+                }//end matching to get variant from string
+            }//end matching to get label for choice
+        }//end matching to find read_start_mode
+        match self.ux_cf_read_row_mode_choice.menu() {
+            None => return Err(format!("Can't get menu for read_row_mode_choice")),
+            Some(menu) => match menu.label() {
+                None => return Err(format!("Couldn't get label for menu item {:?} in read_row_mode", menu)),
+                Some(label) => match ReadRowMode::from_str(&label) {
+                    None => return Err(format!("Couldn't determine ReadRowMode from string {}", label)),
+                    Some(row_mode) => config.read_row_mode = row_mode,
+                }//end matching to get variant from string
+            }//end matching to get label for choice
+        }//end matching to find read_start_mode
+
+        match self.ux_cf_read_start_idx_input.value().parse::<u16>() {
+            Err(msg) => return Err(format!("Couldn't parse read_start_idx due to {:?}", msg)),
+            Ok(read_start_idx) => config.read_start_idx = read_start_idx,
+        }//end matching whether the parse fails (it really shouldn't) for read_start_idx
+        match self.ux_cf_read_rows_max_input.value().parse::<u16>() {
+            Err(msg) => return Err(format!("Couldn't parse read_rows_max due to {:?}", msg)),
+            Ok(read_rows_max) => config.read_max_rows = read_rows_max,
+        }//end matching whether the parse fails (it really shouldn't) for read_rows_max
+
+
+        Ok(config) // TODO: finish implementation
     }//end get_config_store()
 
     /// Updates the gui to show the given configuration settings
@@ -201,6 +241,9 @@ impl GUI {
             Some(menu_item) => {self.ux_cf_read_row_mode_choice.set_item(&menu_item);},
             None => return Err("".to_string()),
         };
+
+        self.ux_cf_read_start_idx_input.set_value(&config.read_start_idx.to_string());
+        self.ux_cf_read_rows_max_input.set_value(&config.read_max_rows.to_string());
 
         Ok(())
     }//end set_config_store()
@@ -545,6 +588,22 @@ impl GUI {
         read_row_mode_choice.clear_visible_focus();
         config_group.add(&read_row_mode_choice);
 
+        let mut read_start_idx_input = IntInput::default()
+            .with_pos(read_start_mode_choice.x(), read_start_mode_choice.y() + read_start_mode_choice.h() + CONF_CHOICE_VER_PADDING)
+            .with_size(read_start_mode_choice.w(), read_start_mode_choice.h())
+            .with_align(CONF_CHOICE_ALIGN)
+            .with_label("Read Start Idx");
+        read_start_idx_input.set_frame(CONF_INPUT_FRAME);
+        config_group.add(&read_start_idx_input);
+
+        let mut read_rows_max_input = IntInput::default()
+            .with_pos(read_row_mode_choice.x(), read_start_idx_input.y())
+            .with_size(read_row_mode_choice.w(), read_row_mode_choice.h())
+            .with_align(CONF_CHOICE_ALIGN)
+            .with_label("Read Rows Max");
+        read_rows_max_input.set_frame(CONF_INPUT_FRAME);
+        config_group.add(&read_rows_max_input);
+
         // set up group for integrated dialog
         let mut dialog_group = Group::default()
             .with_pos(io_controls_group.x(), io_controls_group.y() + io_controls_group.h())
@@ -666,6 +725,8 @@ impl GUI {
             ux_dialog_btns_flx: dialog_btns,
             ux_cf_read_start_mode_choice: read_start_mode_choice,
             ux_cf_read_row_mode_choice: read_row_mode_choice,
+            ux_cf_read_start_idx_input: read_start_idx_input,
+            ux_cf_read_rows_max_input: read_rows_max_input,
         }//end struct construction
     }//end initialize()
 }//end impl for GUI
