@@ -22,6 +22,15 @@ impl ReadStartMode {
             ReadStartMode::Index => "Index".to_string(),
         }//end matching self
     }//end to_string()
+
+    /// Attempts to match label to variant.
+    pub fn from_str(str: &str) -> Option<ReadStartMode> {
+        match str {
+            "Header" => Some(ReadStartMode::Header),
+            "Index" => Some(ReadStartMode::Index),
+            _ => None,
+        }//end matching str
+    }//end from_str()
 }//end impl for ReadStartMode
 
 /// An enum to represent different ways of reading rows after the header.
@@ -44,6 +53,15 @@ impl ReadRowMode {
             ReadRowMode::Max => "Max".to_string(),
         }//end matching self
     }//end to_string()
+
+    /// Attempts to match label to variant.
+    pub fn from_str(str: &str) -> Option<ReadRowMode> {
+        match str {
+            "Header" => Some(ReadRowMode::Header),
+            "Max" => Some(ReadRowMode::Max),
+            _ => None,
+        }//end matching str
+    }//end from_str()
 }//end impl for ReadRowMode
 
 /// This struct is meant to store configuration information
