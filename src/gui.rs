@@ -103,7 +103,7 @@ const CONF_CHOICE_HOR_PADDING: i32 = 5;
 const CONF_CHOICE_VER_PADDING: i32 = 20;
 /// The height in pixels of each choice in the config section.
 const CONF_CHOICE_HEIGHT: i32 = 20;
-/// The alignment of the label for each choice in the config section.
+/// The alignment of the label for each choice and input in the config section.
 const CONF_CHOICE_ALIGN: Align = Align::TopLeft;
 /// The color of the drop down arrow in each choice in the config section.
 const CONF_CHOICE_COLOR: Color = Color::Light1;
@@ -126,6 +126,12 @@ const CONF_CHOICE_LABEL_COLOR: Color = Color::Black;
 const CONF_INPUT_FRAME: FrameType = FrameType::GleamRoundUpBox;
 /// The size in pixels of the scrollbar for input widgets in the config section.
 const CONF_INPUT_SCROLLBAR_SIZE: i32 = 5;
+/// The text size in pixels to use for the line number in multiline inputs in the config group.
+const CONF_MULTI_INPUT_LINENUMBER_SIZE: i32 = 10;
+/// The width of the linenumber column to use in multiline inputs in the config group.
+const CONF_MULTI_INPUT_LINENUMBER_WIDTH: i32 = 15;
+/// The alignment to use for multi-line inputs in the config group.
+const CONF_MULIT_INPUT_SCROLLBAR_ALIGN: Align = Align::Right;
 
 /// This enum is specifically intended for message passing from
 /// the GUI to the main function. This is done with Sender and 
@@ -183,6 +189,10 @@ pub struct GUI {
     ux_cf_read_rows_max_input: IntInput,
 
     ux_cf_read_start_header_box: TextEditor,
+
+    ux_cf_read_row_headers_box: TextEditor,
+
+    ux_cf_row_order_pref_box: TextEditor,
 }//end struct GUI
 
 impl GUI {
@@ -232,6 +242,16 @@ impl GUI {
             Some(buf) => config.read_start_header = buf.text(),
         }//end matching whether or not we can access buffer for read_start_header
 
+        match self.ux_cf_read_row_headers_box.buffer() {
+            None => {},
+            Some(buf) => config.read_row_headers = buf.text().split("\n").map(|s| s.to_string()).collect(),
+        }//end matching whether or not we can access buffer for read_row_headers
+
+        match self.ux_cf_row_order_pref_box.buffer() {
+            None => {},
+            Some(buf) => config.row_order_preference = buf.text().split("\n").map(|s| s.to_string()).collect(),
+        }//end matching whether or not we can access buffer for row_order_preference
+
         Ok(config) // TODO: finish implementation
     }//end get_config_store()
 
@@ -250,9 +270,17 @@ impl GUI {
         self.ux_cf_read_start_idx_input.set_value(&config.read_start_idx.to_string());
         self.ux_cf_read_rows_max_input.set_value(&config.read_max_rows.to_string());
 
-        let mut buf = self.ux_cf_read_start_header_box.buffer().unwrap_or_else(|| TextBuffer::default());
-        buf.set_text(&config.read_start_header);
-        self.ux_cf_read_start_header_box.set_buffer(buf);
+        let mut buf1 = self.ux_cf_read_start_header_box.buffer().unwrap_or_else(|| TextBuffer::default());
+        buf1.set_text(&config.read_start_header);
+        self.ux_cf_read_start_header_box.set_buffer(buf1);
+
+        let mut buf2 = self.ux_cf_read_row_headers_box.buffer().unwrap_or_else(|| TextBuffer::default());
+        buf2.set_text(&config.read_row_headers.join("\n"));
+        self.ux_cf_read_row_headers_box.set_buffer(buf2);
+
+        let mut buf3 = self.ux_cf_row_order_pref_box.buffer().unwrap_or_else(|| TextBuffer::default());
+        buf3.set_text(&config.row_order_preference.join("\n"));
+        self.ux_cf_row_order_pref_box.set_buffer(buf3);
 
         Ok(())
     }//end set_config_store()
@@ -623,7 +651,40 @@ impl GUI {
         read_start_header_box.set_scrollbar_align(Align::Bottom);
         read_start_header_box.set_scrollbar_size(CONF_INPUT_SCROLLBAR_SIZE);
         read_start_header_box.set_buffer(read_start_header_buf);
+        read_start_header_box.set_cursor_style(fltk::text::Cursor::Simple);
         config_group.add(&read_start_header_box);
+
+        let mut cf_multiline_flex = Flex::default()
+            .with_pos(read_start_header_box.x(), read_start_header_box.y() + read_start_header_box.h() + CONF_CHOICE_VER_PADDING)
+            .with_size(read_start_header_box.w(), config_group.h() - read_start_header_box.y() - read_start_header_box.h() - CONF_CHOICE_VER_PADDING - CONF_CHOICE_HOR_PADDING)
+            .with_type(FlexType::Row);
+        config_group.add_resizable(&cf_multiline_flex);
+
+        let read_row_headers_buf = TextBuffer::default();
+        let mut read_row_headers_box = TextEditor::default()
+            .with_align(CONF_CHOICE_ALIGN)
+            .with_label("Read Row Headers");
+        read_row_headers_box.set_frame(CONF_INPUT_FRAME);
+        read_row_headers_box.set_buffer(read_row_headers_buf);
+        read_row_headers_box.set_linenumber_size(CONF_MULTI_INPUT_LINENUMBER_SIZE);
+        read_row_headers_box.set_linenumber_width(CONF_MULTI_INPUT_LINENUMBER_WIDTH);
+        read_row_headers_box.set_scrollbar_align(CONF_MULIT_INPUT_SCROLLBAR_ALIGN);
+        read_row_headers_box.set_scrollbar_size(CONF_INPUT_SCROLLBAR_SIZE);
+        read_row_headers_box.set_cursor_style(fltk::text::Cursor::Simple);
+        cf_multiline_flex.add(&read_row_headers_box);
+
+        let row_order_pref_buf = TextBuffer::default();
+        let mut row_order_pref_box = TextEditor::default()
+            .with_align(CONF_CHOICE_ALIGN)
+            .with_label("Row Order Pref.");
+        row_order_pref_box.set_frame(CONF_INPUT_FRAME);
+        row_order_pref_box.set_buffer(row_order_pref_buf);
+        row_order_pref_box.set_linenumber_size(CONF_MULTI_INPUT_LINENUMBER_SIZE);
+        row_order_pref_box.set_linenumber_width(CONF_MULTI_INPUT_LINENUMBER_WIDTH);
+        row_order_pref_box.set_scrollbar_align(CONF_MULIT_INPUT_SCROLLBAR_ALIGN);
+        row_order_pref_box.set_scrollbar_size(CONF_INPUT_SCROLLBAR_SIZE);
+        row_order_pref_box.set_cursor_style(fltk::text::Cursor::Simple);
+        cf_multiline_flex.add(&row_order_pref_box);
 
         // set up group for integrated dialog
         let mut dialog_group = Group::default()
@@ -749,6 +810,8 @@ impl GUI {
             ux_cf_read_start_idx_input: read_start_idx_input,
             ux_cf_read_rows_max_input: read_rows_max_input,
             ux_cf_read_start_header_box: read_start_header_box,
+            ux_cf_read_row_headers_box: read_row_headers_box,
+            ux_cf_row_order_pref_box: row_order_pref_box,
         }//end struct construction
     }//end initialize()
 }//end impl for GUI
