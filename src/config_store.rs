@@ -90,7 +90,13 @@ pub struct ConfigStore {
     /// beginning of the output in an order matching the one here. Any rows found
     /// which do not match an element of this vector will be placed in output in
     /// the order they are found.
-    pub row_order_preference: Vec<String>
+    pub row_order_preference: Vec<String>,
+    /// The character (or string) to split on when separating the header
+    /// from the data in a row.
+    pub read_row_split_char: String,
+    /// The string directly in front of the test-name, which is used to label
+    /// which file data came from.
+    pub read_test_name_prefix: String,
 }//end struct ConfigStore
 
 impl Default for ConfigStore {
@@ -112,6 +118,8 @@ impl Default for ConfigStore {
             read_start_mode: ReadStartMode::Header,
             read_row_mode: ReadRowMode::Header,
             row_order_preference,
+            read_row_split_char: "\t".to_string(),
+            read_test_name_prefix: "Test name\t:\t".to_string(),
         }//end struct construction
     }//end default()
 }//end impl Default for ConfigStore
