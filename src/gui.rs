@@ -294,6 +294,11 @@ impl GUI {
             ReadRowMode::Header => {let _ = self.ux_cf_read_row_mode_choice.set_value(0);},
             ReadRowMode::Max => {let _ = self.ux_cf_read_row_mode_choice.set_value(1);},
         }
+        // hide and reshow choices to trigger event handling of change
+        self.ux_cf_read_start_mode_choice.hide();
+        self.ux_cf_read_row_mode_choice.hide();
+        self.ux_cf_read_start_mode_choice.show();
+        self.ux_cf_read_row_mode_choice.show();
 
         {
             let read_start_idx_input_ref = (&self.ux_cf_read_start_idx_input).clone();
