@@ -14,7 +14,7 @@ W	4
 P/L	5
 Ie	6
 K	7
-Sh	8
+SH	8
 Dmin	9
 Dmax	0.10
 H2O	0.11
