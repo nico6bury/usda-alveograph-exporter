@@ -59,7 +59,13 @@ fn main() {
                 println!("{}", config_store.read_start_header);
                 let file_contents = fs::read_to_string(input_paths.first().unwrap()).unwrap();
                 let data = data::read_data_from_file(input_paths.first().unwrap().file_name().unwrap().to_str().unwrap(), &file_contents, &config_store);
-                if let Err(msg) = data {println!("{msg}");}
+                match data {
+                    Err(err) => gui.integrated_dialog_alert(&err),
+                    Ok((data,errs)) => {
+                        errs.iter().for_each(|e| eprintln!("{:?}",e));
+                        data.row_data.iter().for_each(|r| eprintln!("{:?}",r));
+                    },
+                }//end matching result of getting data
 
                 // perform cleanup after finishing processing
                 gui.clear_last_input_paths();
