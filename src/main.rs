@@ -22,8 +22,26 @@ fn main() {
 
     while gui.wait() {
         match recv.recv() {
-            Some(gui::InterfaceMessage::AppClosing) => GUI::quit(),
-            Some(gui::InterfaceMessage::ConfigReset) => println!("ConfigReset not implemented yet."),
+            Some(gui::InterfaceMessage::AppClosing) => {
+                if let Some(config_path_v) = config_path {
+                    match gui.get_config_store() {
+                        Err(msg) => gui.integrated_dialog_alert(&format!("Couldn't get save config store because:\n{}", msg)),
+                        Ok(config) => {
+                            if let Err(msg) = config_store::try_write_config(&config_path_v, &config) {
+                                gui.integrated_dialog_alert(&format!("We weren't able to save the config file. Error message is:\n{}", msg));
+                            }//end if writing is not successful
+                        },
+                    }//end matching whether or not we can get the config store
+                    // move this back after we're done with it
+                    config_path = Some(config_path_v);
+                }//end if we have valid config_path
+                GUI::quit();
+            },
+            Some(gui::InterfaceMessage::ConfigReset) => {
+                if let Err(msg) = gui.set_config_store(&ConfigStore::default()) {
+                    gui.integrated_dialog_alert(&format!("There was an issue resetting the config!:\n{}", msg));
+                }//end if we had an error while trying to reset config store
+            },
             Some(gui::InterfaceMessage::Process) => {
                 // get input and output paths from gui/user
                 let input_paths = gui.get_last_input_paths();
