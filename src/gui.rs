@@ -6,7 +6,7 @@ use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, Be
 /// Width in pixels of the main window
 const WINDOW_WIDTH: i32 = 700;
 /// Height in pixels of the main window
-const WINDOW_HEIGHT: i32 = 380;
+const WINDOW_HEIGHT: i32 = 445;
 
 /// FrameType to use for all major groups of widgets
 const GROUP_FRAME: FrameType = FrameType::GtkThinUpBox;
@@ -18,6 +18,8 @@ const HEADER_GROUP_WIDTH: i32 = 450;
 /// The height in pixels of the header group. 
 /// This will affect the sizes of other groups.
 const HEADER_GROUP_HEIGHT: i32 = 90;
+/// The height in pixels of the io_controls group
+const IO_CONTROLS_GROUP_HEIGHT: i32 = 175;
 /// Background color (set_color()) for the major group of io controls
 const IO_CONTROLS_GROUP_COLOR: Color = Color::from_rgb(245,255,250);
 /// Background color (set_color()) for the major group of config settings
@@ -126,6 +128,10 @@ const CONF_CHOICE_LABEL_COLOR: Color = Color::Black;
 const CONF_INPUT_FRAME: FrameType = FrameType::GleamRoundUpBox;
 /// The size in pixels of the scrollbar for input widgets in the config section.
 const CONF_INPUT_SCROLLBAR_SIZE: i32 = 5;
+/// THe height in pixels of the multiline input flex in the config section.
+const CONF_MULTI_INPUT_HEIGHT: i32 = 175;
+/// The height in pixels of the button flex in the config section.
+const CONF_BUTTON_HEIGHT: i32 = 30;
 /// The text size in pixels to use for the line number in multiline inputs in the config group.
 const CONF_MULTI_INPUT_LINENUMBER_SIZE: i32 = 10;
 /// The width of the linenumber column to use in multiline inputs in the config group.
@@ -197,6 +203,10 @@ pub struct GUI {
     ux_cf_read_row_headers_box: Rc<RefCell<TextEditor>>,
     /// The text editor that displays setting for row_order_pref
     ux_cf_row_order_pref_box: TextEditor,
+    /// The text editor that displays setting for read_split_char
+    ux_cf_split_char_box: TextEditor,
+    /// THe text editor that displays setting for read_test_name_prefix
+    ux_cf_test_name_prefix_box: TextEditor,
 }//end struct GUI
 
 impl GUI {
@@ -261,6 +271,16 @@ impl GUI {
             Some(buf) => config.row_order_preference = buf.text().split("\n").map(|s| s.to_string()).collect(),
         }//end matching whether or not we can access buffer for row_order_preference
 
+        match self.ux_cf_split_char_box.buffer() {
+            None => {},
+            Some(buf) => config.read_row_split_char = buf.text(),
+        }//end matching whether or not we can access buffer for read_row_split_char
+
+        match self.ux_cf_test_name_prefix_box.buffer() {
+            None => {},
+            Some(buf) => config.read_test_name_prefix = buf.text(),
+        }//end matching whether or not we can access buffer for read_test_name_prefix
+
         Ok(config)
     }//end get_config_store()
 
@@ -305,6 +325,14 @@ impl GUI {
         let mut buf3 = self.ux_cf_row_order_pref_box.buffer().unwrap_or_else(|| TextBuffer::default());
         buf3.set_text(&config.row_order_preference.join("\n"));
         self.ux_cf_row_order_pref_box.set_buffer(buf3);
+
+        let mut buf4 = self.ux_cf_split_char_box.buffer().unwrap_or_else(|| TextBuffer::default());
+        buf4.set_text(&config.read_row_split_char);
+        self.ux_cf_split_char_box.set_buffer(buf4);
+
+        let mut buf5 = self.ux_cf_test_name_prefix_box.buffer().unwrap_or_else(|| TextBuffer::default());
+        buf5.set_text(&config.read_test_name_prefix);
+        self.ux_cf_test_name_prefix_box.set_buffer(buf5);
 
         Ok(())
     }//end set_config_store()
@@ -527,7 +555,7 @@ impl GUI {
         // set up group with input and output controls, processing stuff
         let mut io_controls_group = Group::default()
             .with_pos(0, header_group.y() + header_group.h())
-            .with_size(header_group.width(), tile_group.h() - header_group.h() - 125);
+            .with_size(header_group.width(), IO_CONTROLS_GROUP_HEIGHT);
         io_controls_group.end();
         io_controls_group.set_frame(GROUP_FRAME);
         io_controls_group.set_color(IO_CONTROLS_GROUP_COLOR);
@@ -682,7 +710,7 @@ impl GUI {
 
         let mut cf_multiline_flex = Flex::default()
             .with_pos(read_start_header_box.x(), read_start_header_box.y() + read_start_header_box.h() + CONF_CHOICE_VER_PADDING)
-            .with_size(read_start_header_box.w(), config_group.h() - read_start_header_box.y() - read_start_header_box.h() - (CONF_CHOICE_VER_PADDING * 2) - (CONF_CHOICE_HOR_PADDING * 2))
+            .with_size(read_start_header_box.w(), CONF_MULTI_INPUT_HEIGHT)
             .with_type(FlexType::Row);
         config_group.add_resizable(&cf_multiline_flex);
 
@@ -712,9 +740,37 @@ impl GUI {
         row_order_pref_box.set_cursor_style(fltk::text::Cursor::Simple);
         cf_multiline_flex.add(&row_order_pref_box);
 
+        // add box for split character
+        // add box for test name prefix
+        let split_char_buf = TextBuffer::default();
+        let mut split_char_box = TextEditor::default()
+            .with_pos(row_order_pref_box.x(), row_order_pref_box.y() + row_order_pref_box.h() + CONF_CHOICE_HOR_PADDING)
+            .with_size(row_order_pref_box.w(), read_start_header_box.h())
+            .with_align(Align::LeftTop)
+            .with_label("Row Split Character");
+        split_char_box.set_buffer(split_char_buf);
+        split_char_box.set_scrollbar_align(Align::Bottom);
+        split_char_box.set_scrollbar_size(CONF_INPUT_SCROLLBAR_SIZE);
+        split_char_box.set_frame(CONF_INPUT_FRAME);
+        split_char_box.set_cursor_style(fltk::text::Cursor::Simple);
+        config_group.add(&split_char_box);
+
+        let test_name_prefix_buf = TextBuffer::default();
+        let mut test_name_prefix_box = TextEditor::default()
+            .with_pos(read_start_header_box.x(), split_char_box.y() + split_char_box.h() + (CONF_CHOICE_VER_PADDING / 2))
+            .with_size(read_start_header_box.w(), read_start_header_box.h())
+            .with_align(CONF_CHOICE_ALIGN)
+            .with_label("Test Name Prefix");
+        test_name_prefix_box.set_buffer(test_name_prefix_buf);
+        test_name_prefix_box.set_frame(CONF_INPUT_FRAME);
+        test_name_prefix_box.set_cursor_style(fltk::text::Cursor::Simple);
+        test_name_prefix_box.set_scrollbar_align(Align::Bottom);
+        test_name_prefix_box.set_scrollbar_size(CONF_INPUT_SCROLLBAR_SIZE);
+        config_group.add(&test_name_prefix_box);
+
         let mut cf_button_flex = Flex::default()
-            .with_pos(cf_multiline_flex.x(), cf_multiline_flex.y() + cf_multiline_flex.h())
-            .with_size(cf_multiline_flex.w(),config_group.h() - cf_multiline_flex.y() - cf_multiline_flex.h())
+            .with_pos(cf_multiline_flex.x(), config_group.y() + config_group.h() - CONF_BUTTON_HEIGHT)
+            .with_size(cf_multiline_flex.w(),CONF_BUTTON_HEIGHT)
             .with_type(FlexType::Row);
         cf_button_flex.set_margins(0,CONF_CHOICE_HOR_PADDING,0,CONF_CHOICE_HOR_PADDING);
         config_group.add(&cf_button_flex);
@@ -918,6 +974,8 @@ impl GUI {
             ux_cf_read_start_header_box: read_start_header_box_ref,
             ux_cf_read_row_headers_box: read_row_headers_box_ref,
             ux_cf_row_order_pref_box: row_order_pref_box,
+            ux_cf_split_char_box: split_char_box,
+            ux_cf_test_name_prefix_box: test_name_prefix_box,
         }//end struct construction
     }//end initialize()
 }//end impl for GUI
