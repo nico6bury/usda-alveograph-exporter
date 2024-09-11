@@ -117,7 +117,27 @@ pub fn read_data_from_file(filename: &str, file_contents: &str, config: &ConfigS
 
 /// Sorts the Vec of Rows based off of config row order pref.  
 /// No rows will be removed or added, simply rearranged, with specified rows
-/// in front of unspecified rows.
+/// in front of unspecified rows.  
+/// Note: The sorting doesn't have great O(n) for speed or space, but n is small
+/// enough for the expected input that it shouldn't matter.
 pub fn sort_row_data(row_data: Vec<Row>, config: &ConfigStore) -> Vec<Row> {
-    row_data // TODO: actually implement the sorting
+    let mut new_row_data = Vec::new();
+    let mut row_data_taken: Vec<bool> = vec![false; row_data.len()];
+    for header_template in config.row_order_preference.iter() {
+        for i in 0..row_data.len() {
+            if row_data[i].header.eq(header_template) {
+                new_row_data.push(row_data[i].clone());
+                row_data_taken[i] = true;
+            }//end if we found a match
+        }//end searching for position of matching header
+    }//end finding all the sorted headers we can
+
+	// add any non-sorted values to new_row_data
+	for i in 0..row_data.len() {
+		if !row_data_taken[i] {
+			new_row_data.push(row_data[i].clone());
+		}//end if this element hasn't been moved already
+	}//end adding non-sorted values to return vec
+
+    return new_row_data;
 }//end sort_row_data()
