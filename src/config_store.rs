@@ -103,11 +103,11 @@ impl Default for ConfigStore {
     fn default() -> Self {
         let read_row_headers = vec![
                 "P","L","G","W","P/L","Ie","K",
-                "SH","Dmin","Dmax","H20",
+                "SH","Dmin","Dmax","H2O",
             ].iter().map(|str| str.to_string()).collect();
         let row_order_preference = vec![
                 "P","L","G","W","P/L","Ie","K",
-                "SH","Dmin","Dmax","H20",
+                "SH","Dmin","Dmax","H2O",
             ].iter().map(|str| str.to_string()).collect();
 
         Self {
