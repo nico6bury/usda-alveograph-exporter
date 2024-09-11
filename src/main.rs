@@ -1,6 +1,6 @@
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
-use alveograph_exporter::config_store::{self, ConfigStore};
+use alveograph_exporter::{config_store::{self, ConfigStore}, data};
 use gui::GUI;
 
 mod gui;
@@ -57,6 +57,9 @@ fn main() {
                 gui.start_wait();
                 println!("//TODO: Processing stuff");
                 println!("{}", config_store.read_start_header);
+                let file_contents = fs::read_to_string(input_paths.first().unwrap()).unwrap();
+                let data = data::read_data_from_file(input_paths.first().unwrap().file_name().unwrap().to_str().unwrap(), &file_contents, &config_store);
+                if let Err(msg) = data {println!("{msg}");}
 
                 // perform cleanup after finishing processing
                 gui.clear_last_input_paths();
