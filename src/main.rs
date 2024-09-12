@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use alveograph_exporter::{config_store::{self, ConfigStore}, data, process::{close_workbook, get_workbook, write_output_to_sheet}};
+use alveograph_exporter::{config_store::{self, ConfigStore}, data::{self, Data}, process::{close_workbook, get_workbook, write_output_to_sheet}};
 use gui::GUI;
 
 mod gui;
@@ -55,20 +55,46 @@ fn main() {
                 config_store = gui.get_config_store().unwrap();
                 // proceed with processing calls
                 gui.start_wait();
-                println!("//TODO: Processing stuff");
-                println!("{}", config_store.read_start_header);
-                let file_contents = fs::read_to_string(input_paths.first().unwrap()).unwrap();
-                let data = data::read_data_from_file(input_paths.first().unwrap().file_name().unwrap().to_str().unwrap(), &file_contents, &config_store);
-                match data {
-                    Err(err) => gui.integrated_dialog_alert(&err),
-                    Ok((data,errs)) => {
-                        errs.iter().for_each(|e| eprintln!("{:?}",e));
-                        data.row_data.iter().for_each(|r| eprintln!("{:?}",r));
-                        let mut workbook = get_workbook();
-                        let _ = write_output_to_sheet(&mut workbook, &vec![data], "test sheet");
-                        let _ = close_workbook(&mut workbook, &output_path);
-                    },
-                }//end matching result of getting data
+                let mut data_files: Vec<Data> = Vec::new();
+                for (i,input_path) in input_paths.iter().enumerate() {
+                    match fs::read_to_string(input_path) {
+                        Err(msg) => gui.integrated_dialog_alert(&format!("There was an error reading from path \"{}\":\n{}",input_path.to_string_lossy(),msg)),
+                        Ok(file_contents) => {
+                            let filename = match input_path.file_name() {
+                                Some(osstr) => osstr.to_string_lossy().into_owned(),
+                                None => "UNKNOWN FILENAME".to_string(),
+                            };
+                            match data::read_data_from_file(&filename, &file_contents, &config_store) {
+                                Err(msg) => {
+                                    if i >= input_paths.len() - 1 {
+                                        gui.integrated_dialog_alert(&format!("There was an issue reading from path \"{}\". The issue was:\n{}",input_path.to_string_lossy(),msg));
+                                    }//end if this is last file
+                                    else {
+                                        if !gui.integrated_dialog_yes_no(&format!("There was an issue reading from path \"{}\". The issue will be displayed below.\n\tDo you want to continue processing?\n\n{}",input_path.to_string_lossy(),msg)) {
+                                            break;} else {continue;}
+                                    }//end else there are a bunch more files
+                                },
+                                Ok((data,errs)) => {
+                                    if errs.len() > 0 {
+                                        if !gui.integrated_dialog_yes_no(&format!("There were issue(s) parsing data from path {}. The issues will be displayed below.\n\tDo you still want to use output from this file?\n\n{}",input_path.to_string_lossy(),errs.join("\n"))) {
+                                            if i >= input_paths.len() - 1 && !gui.integrated_dialog_yes_no(&format!("Since you said you don't want to use the current file, do you want to continue processing?")) {
+                                                break;} else {continue;}
+                                        }//end if user said they don't want to include current, potentially broken file
+                                    }//end if there is at least one error
+                                    data_files.push(data);
+                                },
+                            }//end matching whether we can read data from this file
+                        },
+                    }//end matching whether or not we can get a string from the input file
+                }//end looping over each input file to read from
+
+                let mut wb = get_workbook();
+                if let Err(err) = write_output_to_sheet(&mut wb, &data_files, "alveograph-exporter-output") {
+                    gui.integrated_dialog_alert(&format!("There was an issue writing output data to the sheet:\n{}",err));
+                }//end if there was an error writing to the sheet
+                if let Err(err) = close_workbook(&mut wb, &output_path) {
+                    gui.integrated_dialog_alert(&format!("There was an issue closing the workbook \"{}\". \nIs it open? \n{}", output_path.to_string_lossy(),err));
+                }//end if there was an error closing the workbook
 
                 // perform cleanup after finishing processing
                 gui.clear_last_input_paths();
