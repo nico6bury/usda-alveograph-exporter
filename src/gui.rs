@@ -801,7 +801,7 @@ impl GUI {
         cf_help_btn.set_callback({
             move |_| {
                 let mut dialog_window = Window::default()
-                    .with_size(500,300)
+                    .with_size(550,300)
                     .with_label("Help Dialog");
                 match PngImage::load("icon.png") {
                     Ok(icon) => dialog_window.set_icon(Some(icon)),
@@ -811,6 +811,7 @@ impl GUI {
                 let mut help_box = HelpView::default_fill();
                 if let Err(err) = help_box.load("help.html") {
                     dialog::message_default(&format!("Couldn't find help.html and encountered an error: {}",err));}
+                help_box.set_text_size(16);
                 dialog_window.end();
                 dialog_window.show();
             }
