@@ -577,7 +577,7 @@ impl GUI {
         let mut input_btn = Button::default()
             .with_pos(io_controls_label.x() + IO_BTN_PADDING, io_controls_label.y() + io_controls_label.h() + IO_BTN_PADDING)
             .with_size(IO_BTN_WIDTH, IO_BTN_HEIGHT)
-            .with_label("Select Input File");
+            .with_label("Select Input File(s)");
         input_btn.set_frame(IO_BTN_FRAME);
         input_btn.set_down_frame(IO_BTN_DOWN_FRAME);
         input_btn.set_tooltip("Click this button to choose an input file.");
@@ -789,7 +789,7 @@ impl GUI {
         cf_button_flex.add(&cf_reset_btn);
 
         let mut cf_help_btn = Button::default()
-            .with_label("Config Help");
+            .with_label("Help");
         cf_help_btn.set_frame(CONF_BTN_FRAME);
         cf_help_btn.set_down_frame(CONF_BTN_DOWN_FRAME);
         cf_help_btn.clear_visible_focus();
