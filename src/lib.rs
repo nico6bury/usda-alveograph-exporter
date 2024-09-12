@@ -11,3 +11,8 @@ pub mod config_store;
 /// data from the data module and exporting
 /// that data to a file.
 pub mod process;
+
+/// This module contains automated testing for
+/// various functions in other modules
+#[cfg(test)]
+pub mod test;
