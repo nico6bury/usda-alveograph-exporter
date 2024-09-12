@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use alveograph_exporter::{config_store::{self, ConfigStore}, data};
+use alveograph_exporter::{config_store::{self, ConfigStore}, data, process::{close_workbook, get_workbook, write_output_to_sheet}};
 use gui::GUI;
 
 mod gui;
@@ -50,7 +50,7 @@ fn main() {
                 let input_valid = validate_input_paths(&input_paths, &mut gui);
                 let output_path = validate_output_path(output_path, &mut gui);
                 if !input_valid || output_path.is_err() {continue;}
-                let _output_path = output_path.expect("We already checked it wasn't an error.");
+                let output_path = output_path.expect("We already checked it wasn't an error.");
                 // grab configuration details from the gui
                 config_store = gui.get_config_store().unwrap();
                 // proceed with processing calls
@@ -64,6 +64,9 @@ fn main() {
                     Ok((data,errs)) => {
                         errs.iter().for_each(|e| eprintln!("{:?}",e));
                         data.row_data.iter().for_each(|r| eprintln!("{:?}",r));
+                        let mut workbook = get_workbook();
+                        let _ = write_output_to_sheet(&mut workbook, &vec![data], "test sheet");
+                        let _ = close_workbook(&mut workbook, &output_path);
                     },
                 }//end matching result of getting data
 
