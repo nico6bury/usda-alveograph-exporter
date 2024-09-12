@@ -184,7 +184,7 @@ pub fn try_read_config(config_path: &PathBuf) -> Result<ConfigStore,String> {
 pub fn try_write_config(config_path: &PathBuf, config_store: &ConfigStore) -> Result<(),String> {
     match File::create(config_path) {
         Ok(mut file) => {
-            match serde_json::to_string(config_store) {
+            match serde_json::to_string_pretty(config_store) {
                 Ok(config_serial) => {
                     match file.write_all(config_serial.as_bytes()) {
                         Ok(_) => Ok(()),
