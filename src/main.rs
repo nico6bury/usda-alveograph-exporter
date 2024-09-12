@@ -1,3 +1,4 @@
+#![cfg_attr(not(debug_assertions),windows_subsystem = "windows")]
 use std::{fs, path::PathBuf};
 
 use alveograph_exporter::{config_store::{self, ConfigStore}, data::{self, Data}, process::{close_workbook, get_workbook, write_output_to_sheet}};
