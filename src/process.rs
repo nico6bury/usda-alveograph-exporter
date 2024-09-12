@@ -31,7 +31,7 @@ pub fn write_output_to_sheet(workbook: &mut Workbook, data: &Vec<Data>, sheet_na
     }//end writing each row header
 
     let test_name_format = Format::new().set_align(FormatAlign::Center);
-    let default_format = Format::new().set_num_format("0.00").set_align(FormatAlign::Center);
+    let default_format = Format::new().set_align(FormatAlign::Center);//.set_num_format("0.00");
     let mut row_num = 1;
     for data_file in data {
         sheet.write_with_format(row_num,0,data_file.test_name.clone(), &test_name_format)?;
