@@ -1,7 +1,7 @@
 use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
 use alveograph_exporter::config_store::{ConfigStore, ReadRowMode, ReadStartMode};
-use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, BeepType, FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, Event, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, input::IntInput, menu::Choice, prelude::{ButtonExt, DisplayExt, GroupExt, InputExt, MenuExt, WidgetBase, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor, WrapMode}, window::{self, Window}};
+use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, BeepType, FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, Event, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, input::IntInput, menu::Choice, misc::HelpView, prelude::{ButtonExt, DisplayExt, GroupExt, InputExt, MenuExt, WidgetBase, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor, WrapMode}, window::{self, Window}};
 
 /// Width in pixels of the main window
 const WINDOW_WIDTH: i32 = 700;
@@ -794,6 +794,20 @@ impl GUI {
         cf_help_btn.set_down_frame(CONF_BTN_DOWN_FRAME);
         cf_help_btn.clear_visible_focus();
         cf_button_flex.add(&cf_help_btn);
+        cf_help_btn.set_callback({
+            move |_| {
+                let mut dialog_window = Window::default()
+                    .with_size(500,300)
+                    .with_label("Help Dialog");
+                dialog_window.set_color(IO_CONTROLS_GROUP_COLOR);
+                dialog_window.make_resizable(true);
+                let mut help_box = HelpView::default_fill();
+                if let Err(err) = help_box.load("help.html") {
+                    dialog::message_default(&format!("{}",err));}
+                dialog_window.end();
+                dialog_window.show();
+            }
+        });
 
         // set up group for integrated dialog
         let mut dialog_group = Group::default()
