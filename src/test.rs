@@ -41,7 +41,10 @@ pub fn sample_config() -> ConfigStore {
 pub fn data_get_test_name_from_lines1() {
     let file_lines = sample_file_lines();
     let config = sample_config();
-    let test_name = crate::data::get_test_name_from_lines(&file_lines, &config).unwrap();
+    let test_name = crate::data::get_test_name_from_lines(
+        &file_lines,
+        &config
+    ).unwrap();
     assert_eq!(test_name, "Sample001-1234567".to_string());
 }//end data_get_test_name_from_lines1()
 
@@ -50,7 +53,11 @@ pub fn data_get_test_name_from_lines1() {
 pub fn data_get_header_idx_from_lines1() {
     let file_lines = sample_file_lines();
     let config = sample_config();
-    let header_idx = crate::data::get_header_idx_from_lines("sample-filename", &file_lines, &config).unwrap();
+    let header_idx = crate::data::get_header_idx_from_lines(
+        "sample-filename",
+        &file_lines,
+        &config
+    ).unwrap();
     assert_eq!(header_idx, 7);
 }//end data_get_header_idx_from_lines1
 
@@ -59,7 +66,11 @@ pub fn data_get_header_idx_from_lines1() {
 pub fn data_read_data_from_file() {
     let file_lines = sample_file_lines();
     let config = sample_config();
-    let (data, errs) = crate::data::read_data_from_file("sample-filename", &file_lines.join("\n"), &config).unwrap();
+    let (data, errs) = crate::data::read_data_from_file(
+        "sample-filename",
+        &file_lines.join("\n"),
+        &config
+    ).unwrap();
     assert!(errs.len() == 0);
     let correct_data = crate::data::Data::new1(
         "Sample001-1234567".to_string(),
@@ -87,6 +98,9 @@ pub fn data_sort_row_data1() {
         crate::data::Row::new("P".to_string(),1.),
         crate::data::Row::new("H2O".to_string(),4.),
     ];
-    let sorted_row_data = crate::data::sort_row_data(row_data, &sample_config());
+    let sorted_row_data = crate::data::sort_row_data(
+        row_data,
+        &sample_config()
+    );
     assert_eq!(correct_sorted_row_data,sorted_row_data);
 }//end data_sort_row_data1
