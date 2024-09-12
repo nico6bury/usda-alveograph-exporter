@@ -803,7 +803,10 @@ impl GUI {
                 let mut dialog_window = Window::default()
                     .with_size(500,300)
                     .with_label("Help Dialog");
-                dialog_window.set_color(IO_CONTROLS_GROUP_COLOR);
+                match PngImage::load("icon.png") {
+                    Ok(icon) => dialog_window.set_icon(Some(icon)),
+                    Err(err) => eprintln!("Couldn't load icon image because of {}",err),
+                }//end matching whether we could load the icon image alright
                 dialog_window.make_resizable(true);
                 let mut help_box = HelpView::default_fill();
                 if let Err(err) = help_box.load("help.html") {
