@@ -71,7 +71,6 @@ pub fn read_data_from_file(filename: &str, file_contents: &str, config: &ConfigS
     };
     // start reading rows after the header idx
     let mut row_data = Vec::new();
-    eprintln!("\n\n");
     match config.read_row_mode {
         crate::config_store::ReadRowMode::Max => {
             for line in &lines[(header_idx+1)..=(header_idx+(config.read_max_rows as usize))] {
