@@ -1,7 +1,7 @@
 use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
 use alveograph_exporter::config_store::{ConfigStore, ReadRowMode, ReadStartMode};
-use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, BeepType, FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, Event, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, input::IntInput, menu::Choice, misc::HelpView, prelude::{ButtonExt, DisplayExt, GroupExt, InputExt, MenuExt, WidgetBase, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor, WrapMode}, window::{self, Window}};
+use fltk::{app::{self, App, Receiver, Sender}, button::Button, dialog::{self, BeepType, FileDialogOptions, FileDialogType, NativeFileChooser}, enums::{Align, Color, Event, FrameType}, frame::Frame, group::{Flex, FlexType, Group, Tile}, image::PngImage, input::IntInput, menu::Choice, misc::HelpView, prelude::{ButtonExt, DisplayExt, GroupExt, InputExt, MenuExt, WidgetBase, WidgetExt, WindowExt}, text::{TextBuffer, TextDisplay, TextEditor, WrapMode}, window::{self, Window}};
 
 /// Width in pixels of the main window
 const WINDOW_WIDTH: i32 = 700;
@@ -525,6 +525,10 @@ impl GUI {
             .with_label("USDA Alveograph Exporter");
         main_window.make_resizable(true);
         main_window.end();
+        match PngImage::load("icon.png") {
+            Ok(icon) => main_window.set_icon(Some(icon)),
+            Err(err) => eprintln!("Couldn't load icon image because of {}",err),
+        }//end matching whether we could load the icon image alright
 
         let (s,r) = app::channel();
 
