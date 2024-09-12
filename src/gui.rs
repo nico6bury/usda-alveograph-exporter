@@ -810,7 +810,7 @@ impl GUI {
                 dialog_window.make_resizable(true);
                 let mut help_box = HelpView::default_fill();
                 if let Err(err) = help_box.load("help.html") {
-                    dialog::message_default(&format!("{}",err));}
+                    dialog::message_default(&format!("Couldn't find help.html and encountered an error: {}",err));}
                 dialog_window.end();
                 dialog_window.show();
             }
