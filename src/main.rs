@@ -1,5 +1,5 @@
 #![cfg_attr(not(debug_assertions),windows_subsystem = "windows")]
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, time::{Duration, Instant}};
 
 use alveograph_exporter::{config_store::{self, ConfigStore}, data::{self, Data}, process::{close_workbook, get_workbook, write_output_to_sheet}};
 use gui::GUI;
@@ -56,6 +56,7 @@ fn main() {
                 config_store = gui.get_config_store().unwrap();
                 // proceed with processing calls
                 gui.start_wait();
+                let start = Instant::now();
                 let mut data_files: Vec<Data> = Vec::new();
                 for (i,input_path) in input_paths.iter().enumerate() {
                     match fs::read_to_string(input_path) {
@@ -106,7 +107,8 @@ fn main() {
                 gui.clear_last_output_path();
                 if wrote_to_output && closed_output {
                     eprintln!("Finished processing file(s).");
-                    if gui.integrated_dialog_yes_no("Processing has completed successfully. Would you like to open the folder where the output file is located?") {
+                    let total_duration = start.elapsed();
+                    if gui.integrated_dialog_yes_no(&format!("Processing has completed successfully in {} miliseconds. Would you like to open the folder where the output file is located?", format_milliseconds(total_duration))) {
                         opener::reveal(output_path).unwrap_or_else(|e| eprintln!("Couldn't reveal output due to {}", e));
                     }//end if user want to open folder
                 }//end if output file seems to be created ok
@@ -116,6 +118,16 @@ fn main() {
         }//end matching message received
     }//end main application loop
 }//end main function
+
+/// Given a duration, gives a string of a float representation of the number
+/// of milliseconds. If the parse fails, it will return the whole
+/// number of milliseconds as a string.
+fn format_milliseconds(duration: Duration) -> String {
+	match format!("{}",duration.as_micros()).parse::<f64>() {
+		Err(_) => format!("{}",duration.as_millis()),
+		Ok(micros) => format!("{0:.2}", micros / 1000.),
+	}//end matching whether we can parse float-micros
+}//end format_milliseconds(duration)
 
 /// Returns true if the input paths are more than 0 and valid for processing.  
 /// If invalid, shows dialog message about issue.
