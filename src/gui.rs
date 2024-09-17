@@ -599,6 +599,7 @@ impl GUI {
         input_box.set_scrollbar_size(7);
         input_box.set_color(IO_INPUT_BOX_COLOR);
         input_box.set_buffer(input_buf);
+        input_box.set_tooltip("This box shows all the input files you currently have selected.");
         io_controls_group.add_resizable(&input_box);
 
         let mut output_btn = Button::default()
@@ -621,6 +622,7 @@ impl GUI {
         output_box.set_scrollbar_align(Align::Bottom);
         output_box.set_scrollbar_size(7);
         output_box.set_buffer(output_buf);
+        output_box.set_tooltip("This box shows the output file you have selected.");
         io_controls_group.add_resizable(&output_box);
 
         let mut process_btn = Button::default()
@@ -633,6 +635,7 @@ impl GUI {
         process_btn.clear_visible_focus();
         process_btn.set_color(IO_BTN_COLOR);
         process_btn.set_selection_color(IO_BTN_DOWN_COLOR);
+        process_btn.set_tooltip("Once you've selected an input and output, click this to process your files.");
         io_controls_group.add_resizable(&process_btn);
 
         // set up group with configuration options
@@ -642,6 +645,7 @@ impl GUI {
         config_group.end();
         config_group.set_frame(GROUP_FRAME);
         config_group.set_color(CONFIG_GROUP_COLOR);
+        config_group.set_tooltip("Click the \"Help\" button for more information on any configuration setting.");
         tile_group.add(&config_group);
 
         let mut config_group_label = Frame::default()
@@ -668,6 +672,7 @@ impl GUI {
         read_start_mode_choice.set_text_size(CONF_CHOICE_TEXT_SIZE);
         read_start_mode_choice.clear_visible_focus();
         read_start_mode_choice.set_value(0);
+        read_start_mode_choice.set_tooltip("The method by which the program finds the header above the rows of data in the file. See Help for details.");
         config_group.add(&read_start_mode_choice);
 
         let mut read_row_mode_choice = Choice::default()
@@ -686,6 +691,7 @@ impl GUI {
         read_row_mode_choice.set_text_size(CONF_CHOICE_TEXT_SIZE);
         read_row_mode_choice.clear_visible_focus();
         read_row_mode_choice.set_value(0);
+        read_row_mode_choice.set_tooltip("The method by which the program finds rows of data under the start header in the file. See Help for details.");
         config_group.add(&read_row_mode_choice);
 
         let mut read_start_idx_input = IntInput::default()
@@ -694,6 +700,7 @@ impl GUI {
             .with_align(CONF_CHOICE_ALIGN)
             .with_label("Read Start Idx");
         read_start_idx_input.set_frame(CONF_INPUT_FRAME);
+        read_start_idx_input.set_tooltip("If using Read Start Mode of Index, sets the 0-based index where the start header is located. See Help for details.");
         config_group.add(&read_start_idx_input);
 
         let mut read_rows_max_input = IntInput::default()
@@ -702,6 +709,7 @@ impl GUI {
             .with_align(CONF_CHOICE_ALIGN)
             .with_label("Read Rows Max");
         read_rows_max_input.set_frame(CONF_INPUT_FRAME);
+        read_rows_max_input.set_tooltip("If using Read Rows Mode of Max, sets the number of rows after the start index to read. See Help for details.");
         config_group.add(&read_rows_max_input);
 
         let read_start_header_buf = TextBuffer::default();
@@ -715,6 +723,7 @@ impl GUI {
         read_start_header_box.set_scrollbar_size(CONF_INPUT_SCROLLBAR_SIZE);
         read_start_header_box.set_buffer(read_start_header_buf);
         read_start_header_box.set_cursor_style(fltk::text::Cursor::Simple);
+        read_start_header_box.set_tooltip("If using Read Start Mode of Header, sets the exact value of header to look for as the start header. See Help for details.");
         config_group.add(&read_start_header_box);
 
         let mut cf_multiline_flex = Flex::default()
@@ -734,6 +743,7 @@ impl GUI {
         read_row_headers_box.set_scrollbar_align(CONF_MULIT_INPUT_SCROLLBAR_ALIGN);
         read_row_headers_box.set_scrollbar_size(CONF_INPUT_SCROLLBAR_SIZE);
         read_row_headers_box.set_cursor_style(fltk::text::Cursor::Simple);
+        read_row_headers_box.set_tooltip("If using Read Rows Mode of Header, sets the exact headers (and ordering of those headers) to look for after the start header. Very sensitive, see Help for details.");
         cf_multiline_flex.add(&read_row_headers_box);
 
         let row_order_pref_buf = TextBuffer::default();
@@ -747,6 +757,7 @@ impl GUI {
         row_order_pref_box.set_scrollbar_align(CONF_MULIT_INPUT_SCROLLBAR_ALIGN);
         row_order_pref_box.set_scrollbar_size(CONF_INPUT_SCROLLBAR_SIZE);
         row_order_pref_box.set_cursor_style(fltk::text::Cursor::Simple);
+        row_order_pref_box.set_tooltip("Sets a custom output order for various data headers. This setting will never add or remove data; see Help for details.");
         cf_multiline_flex.add(&row_order_pref_box);
 
         // add box for split character
@@ -762,6 +773,7 @@ impl GUI {
         split_char_box.set_scrollbar_size(CONF_INPUT_SCROLLBAR_SIZE);
         split_char_box.set_frame(CONF_INPUT_FRAME);
         split_char_box.set_cursor_style(fltk::text::Cursor::Simple);
+        split_char_box.set_tooltip("Sets the split character between header and value in data rows. See Help for details.");
         config_group.add(&split_char_box);
 
         let test_name_prefix_buf = TextBuffer::default();
@@ -775,6 +787,7 @@ impl GUI {
         test_name_prefix_box.set_cursor_style(fltk::text::Cursor::Simple);
         test_name_prefix_box.set_scrollbar_align(Align::Bottom);
         test_name_prefix_box.set_scrollbar_size(CONF_INPUT_SCROLLBAR_SIZE);
+        test_name_prefix_box.set_tooltip("Sets the prefix to the test name to look for in each file. See Help for details.");
         config_group.add(&test_name_prefix_box);
 
         let mut cf_button_flex = Flex::default()
@@ -790,6 +803,7 @@ impl GUI {
         cf_reset_btn.set_down_frame(CONF_BTN_DOWN_FRAME);
         cf_reset_btn.clear_visible_focus();
         cf_reset_btn.emit(s, InterfaceMessage::ConfigReset);
+        cf_reset_btn.set_tooltip("Resets all configuration settings to the default values.");
         cf_button_flex.add(&cf_reset_btn);
 
         let mut cf_help_btn = Button::default()
@@ -797,6 +811,7 @@ impl GUI {
         cf_help_btn.set_frame(CONF_BTN_FRAME);
         cf_help_btn.set_down_frame(CONF_BTN_DOWN_FRAME);
         cf_help_btn.clear_visible_focus();
+        cf_help_btn.set_tooltip("Provides detailed help information on using and configuring the program.");
         cf_button_flex.add(&cf_help_btn);
         cf_help_btn.set_callback({
             move |_| {
