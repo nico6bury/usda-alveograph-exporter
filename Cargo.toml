@@ -16,3 +16,4 @@ compile-time = "0.2.0"
 serde = { version = "1.0.202", features = ["derive"] }
 serde_json = "1.0.117"
 rust_xlsxwriter = "0.76.0"
+opener = { version = "0.7.2", features = ["reveal"] }
