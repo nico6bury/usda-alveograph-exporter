@@ -90,16 +90,26 @@ fn main() {
                 }//end looping over each input file to read from
 
                 let mut wb = get_workbook();
+                let mut wrote_to_output = false;
+                let mut closed_output = false;
                 if let Err(err) = write_output_to_sheet(&mut wb, &data_files, "alveograph-exporter-output") {
                     gui.integrated_dialog_alert(&format!("There was an issue writing output data to the sheet:\n{}",err));
                 }//end if there was an error writing to the sheet
+                else {wrote_to_output = true;}
                 if let Err(err) = close_workbook(&mut wb, &output_path) {
                     gui.integrated_dialog_alert(&format!("There was an issue closing the workbook \"{}\". \nIs it open? \n{}", output_path.to_string_lossy(),err));
                 }//end if there was an error closing the workbook
+                else {closed_output = true;}
 
                 // perform cleanup after finishing processing
                 gui.clear_last_input_paths();
                 gui.clear_last_output_path();
+                if wrote_to_output && closed_output {
+                    eprintln!("Finished processing file(s).");
+                    if gui.integrated_dialog_yes_no("Processing has completed successfully. Would you like to open the folder where the output file is located?") {
+                        opener::reveal(output_path).unwrap_or_else(|e| eprintln!("Couldn't reveal output due to {}", e));
+                    }//end if user want to open folder
+                }//end if output file seems to be created ok
                 gui.end_wait();
             },
             None => {},
