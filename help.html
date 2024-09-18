@@ -49,7 +49,7 @@
             Configuration Options
         </h2>
         <p>
-            In order to understand the options for configuration the program, it's
+            In order to understand the options for configuring the program, it's
             probably best to start by explaining more of how the program works.<br>
             In each file, the program generally tries to find two things:
             <ul>
@@ -66,7 +66,7 @@
         <p>
             In order to find the test name, the program searches for a heading that goes
             in front of the name. For example, it might appear as "Test name : 23SC006" or
-            something similar. We want to extract the "23SC006" from that line, we set
+            something similar. We want to extract the "23SC006" from that line, so we set
             the "<b>Test Name Prefix</b>" to "Test name : ". The program looks for a line that
             starts with the prefix and then assumes that anything after the prefix is the
             test name. <br>
@@ -116,12 +116,14 @@
             If the "<b>Read Row Mode</b>" is set to "<b>Header</b>", then in order to find the
             data rows, the program will match the rows it finds against the "<b>Read Row Headers</b>"
             setting. In the "<b>Read Row Headers</b>" box, several row headers are provided in a
-            particular order. The program then looks for rows exactly matching the ones provided,
+            particular order. The program then looks for rows headers exactly matching the ones provided,
             in the same order. When the program either runs out of specified rows or encounters
             a line which doesn't start with the next header in the "<b>Read Row Headers</b>" list,
-            it will stop reading data rows for that file.<br>
+            it will stop reading data rows for that file. In the case of the program not being able
+            to find all the headers its given, it might display an error message, giving the user
+            the option of halting execution if this is unexpected.<br>
             You can configure the "<b>Read Row Headers</b>" by simply typing into the box labelled
-            "<b>Read Row Headers</b>". Be careful to not type each header exactly, in the same order
+            "<b>Read Row Headers</b>". Be careful to type each header exactly, in the same order
             they appear in your file. Do not include separation characters such as tabs or empty
             lines at the end of the box. The rows are labelled with linenumbers so you can see exactly
             how many lines are listed.
@@ -130,7 +132,7 @@
             Alternatively, if the "<b>Read Row Mode</b>" is set to "<b>Max</b>", then you may
             simply tell the program to read an arbitrary number of lines after the Read Start Header.<br>
             For example: if you wanted to read 11 data rows that occur right after the start header,
-            you could simply enter 11 into the "<b>Read Rows Max</b>" box. This is useful if the data
+            you could simply enter "11" into the "<b>Read Rows Max</b>" box. This is useful if the data
             rows might have different headers in different files, if the headers are not in the same
             order, or simply if you want a simpler way of configuring this setting.
         </p>
@@ -139,7 +141,7 @@
         </h4>
         <p>
             There might be a case in which you prefer that your output be formatted with each header
-            in a particular order. The "Read Row Headers" specifies how the rows are ordered within your
+            in a particular order. The "<b>Read Row Headers</b>" specifies how the rows are ordered within your
             file, but that order may not be under your control. Thus, you can use the "<b>Row Order Pref.</b>"
             box to change this. You can add Row Headers to the "<b>Row Order Pref.</b>" box using the same
             formatting as the "<b>Read Row Headers</b>" box, but Row Order Preference is much less picky.<br>
