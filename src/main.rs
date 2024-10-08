@@ -1,5 +1,5 @@
 #![cfg_attr(not(debug_assertions),windows_subsystem = "windows")]
-use std::{fs, path::PathBuf, time::{Duration, Instant}};
+use std::{fs::{self, File}, io::Write, path::PathBuf, slice::Iter, time::{Duration, Instant}};
 
 use alveograph_exporter::{config_store::{self, ConfigStore}, data::{self, Data}, process::{close_workbook, get_workbook, write_output_to_sheet}};
 use gui::GUI;
@@ -212,3 +212,22 @@ fn ensure_config_valid(
         Err(msg) => gui.integrated_dialog_alert(&format!("Could not determine the path to a config file:\n{}", msg)),
     }//end matching whether or not we can get config path
 }//end ensure_config_valid()
+
+/// Appends error information to the error log
+/// # Parameters
+/// - log_name : the name of the log file, including the file extension
+/// - error_context : some text to give context about where the error came from, such as config reading, data reading, etc.
+/// - error_msgs : a collection of error messages to print out below the context
+fn append_error_log(log_name: &str, error_context: &str, error_msgs: Iter<&str>) -> Result<(),String> {
+	match File::create(log_name) {
+		Err(msg) => return Err(format!("Encountered error when trying to create a file called {log_name}:\n{msg}")),
+		Ok(mut file) => {
+			file.write(error_context.as_bytes()).unwrap_or_else(|e| {println!("Error {e} prevented writing to log file."); 0});
+			for error_msg in error_msgs {
+				file.write(error_msg.as_bytes()).unwrap_or_else(|e| {println!("Error {e} prevented writing to log file."); 0});
+				file.write(b"\n").unwrap_or_else(|e| {println!("Error {e} prevented writing to log file."); 0});
+			}//end looping over each error message
+		},
+	}//end matching whether the file can be created
+	todo!();
+}//end append_error_log()
