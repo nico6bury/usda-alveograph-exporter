@@ -75,13 +75,13 @@ pub fn read_data_from_file(filename: &str, file_contents: &str, config: &ConfigS
         crate::config_store::ReadRowMode::Max => {
             for line in &lines[(header_idx+1)..=(header_idx+(config.read_max_rows as usize))] {
                 let split_row: Vec<&str> = line.split(&config.read_row_split_char).collect();
-                if split_row.len() < 2 {errs.push(format!("Couldn't find a proper split for \"{:?}\", len < 2", split_row));}
+                if split_row.len() < 2 {errs.push(format!("Couldn't find a proper split for \"{:?}\", len < 2, in file {filename}", split_row));}
                 else {
                     let row_header = split_row[0].to_string();
                     let row_value = split_row[1].trim().parse::<f64>();
                     match row_value {
                         Ok(row_value) => row_data.push(Row::new(row_header, row_value)),
-                        Err(msg) => errs.push(format!("Failed to parse \"{}\" in line \"{}\" as f64:\n{}",split_row[1],line,msg)),
+                        Err(msg) => errs.push(format!("Failed to parse \"{}\" in line \"{}\" as f64 in file {filename}:\n{}",split_row[1],line,msg)),
                     }//end matching whether we can parse the raw value
                 }//end else we can get split stuff find
             }//end looping over each line specified
@@ -93,16 +93,16 @@ pub fn read_data_from_file(filename: &str, file_contents: &str, config: &ConfigS
                 let this_row_header = config.read_row_headers.get(header_offset).expect("Already checked.");
                 if line.starts_with(this_row_header) {
                     let split_row: Vec<&str> = line.split(&config.read_row_split_char).collect();
-                    if split_row.len() < 2 {errs.push(format!("Couldn't find a proper split for \"{:?}\", len < 2", split_row));}
+                    if split_row.len() < 2 {errs.push(format!("Couldn't find a proper split for \"{:?}\" in file {filename}, len < 2", split_row));}
                     else {
                         let row_header = split_row[0].to_string();
                         let row_value = split_row[1].trim().parse::<f64>();
                         match row_value {
                             Ok(row_value) => row_data.push(Row::new(row_header, row_value)),
-                            Err(msg) => errs.push(format!("Failed to parse \"{}\" in line \"{}\" as f64:\n{}",split_row[1],line,msg)),
+                            Err(msg) => errs.push(format!("Failed to parse \"{}\" in line \"{}\" as f64 for file {filename}:\n{}",split_row[1],line,msg)),
                         }//end matching whether we can parse the row value
                     }//end else we can get split stuff find
-                } else {errs.push(format!("{} breaks row pattern", line)); break;}
+                } else {errs.push(format!("Broken row pattern in filename {filename}. We were looking for row header \"{this_row_header}\", but we found line \"{line}\".")); break;}
                 header_offset += 1;
             }//end looping over each line specified
         },
