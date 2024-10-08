@@ -1,10 +1,12 @@
 #![cfg_attr(not(debug_assertions),windows_subsystem = "windows")]
-use std::{fs::{self, File}, io::Write, path::PathBuf, slice::Iter, time::{Duration, Instant}};
+use std::{fs::{self}, io::Write, path::PathBuf, slice::Iter, time::{Duration, Instant}};
 
 use alveograph_exporter::{config_store::{self, ConfigStore}, data::{self, Data}, process::{close_workbook, get_workbook, write_output_to_sheet}};
 use gui::GUI;
 
 mod gui;
+
+const ERROR_LOG_NAME: &str = "errors.log";
 
 fn main() {
     // setup gui
@@ -68,6 +70,7 @@ fn main() {
                             };
                             match data::read_data_from_file(&filename, &file_contents, &config_store) {
                                 Err(msg) => {
+									append_error_log(ERROR_LOG_NAME, "Issue Reading from Single File", vec![""].iter()).unwrap_or_else(|e| gui.integrated_dialog_alert(&format!("Couldn't save error to log file:{e}")));
                                     if i >= input_paths.len() - 1 {
                                         gui.integrated_dialog_alert(&format!("There was an issue reading from path \"{}\". The issue was:\n{}",input_path.to_string_lossy(),msg));
                                     }//end if this is last file
@@ -78,6 +81,7 @@ fn main() {
                                 },
                                 Ok((data,errs)) => {
                                     if errs.len() > 0 {
+										append_error_log(ERROR_LOG_NAME, "Non-Fatal Errors while Processing Files", errs.iter().map(|s| s.as_str()).collect::<Vec<&str>>().iter()).unwrap_or_else(|e| gui.integrated_dialog_alert(&format!("Couldn't save error to log file:{e}")));
                                         if !gui.integrated_dialog_yes_no(&format!("There were issue(s) parsing data from path {}. The issues will be displayed below.\n\tDo you still want to use output from this file?\n\n{}",input_path.to_string_lossy(),errs.join("\n"))) {
                                             if i >= input_paths.len() - 1 && !gui.integrated_dialog_yes_no(&format!("Since you said you don't want to use the current file, do you want to continue processing?")) {
                                                 break;} else {continue;}
@@ -219,15 +223,31 @@ fn ensure_config_valid(
 /// - error_context : some text to give context about where the error came from, such as config reading, data reading, etc.
 /// - error_msgs : a collection of error messages to print out below the context
 fn append_error_log(log_name: &str, error_context: &str, error_msgs: Iter<&str>) -> Result<(),String> {
-	match File::create(log_name) {
+	match std::fs::OpenOptions::new()
+		.write(true)
+		.append(true)
+		.open(log_name)
+	{
 		Err(msg) => return Err(format!("Encountered error when trying to create a file called {log_name}:\n{msg}")),
 		Ok(mut file) => {
+			let now = time::OffsetDateTime::now_utc();
+			file.write(b"\n").unwrap_or_else(|e| {println!("Error {e} prevented writing to log file."); 0});
+			file.write(format!("{}-{}-{},{}:{}:{}:{}\t",
+				now.date().year(),
+				now.date().month(),
+				now.date().day(),
+				now.time().hour(),
+				now.time().minute(),
+				now.time().second(),
+				now.time().millisecond(),
+			).as_bytes()).unwrap_or_else(|e| {println!("Error {e} prevented writing to log file."); 0});
 			file.write(error_context.as_bytes()).unwrap_or_else(|e| {println!("Error {e} prevented writing to log file."); 0});
+			file.write(b"\n").unwrap_or_else(|e| {println!("Error {e} prevented writing to log file."); 0});
 			for error_msg in error_msgs {
 				file.write(error_msg.as_bytes()).unwrap_or_else(|e| {println!("Error {e} prevented writing to log file."); 0});
 				file.write(b"\n").unwrap_or_else(|e| {println!("Error {e} prevented writing to log file."); 0});
 			}//end looping over each error message
 		},
 	}//end matching whether the file can be created
-	todo!();
+	Ok(())
 }//end append_error_log()
