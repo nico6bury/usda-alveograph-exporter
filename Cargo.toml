@@ -1,6 +1,6 @@
 [package]
 name = "alveograph-exporter"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Nicholas Sixbury"]
 rust-version = "1.80.1"
 description = "This project is an application created for use at USDA-ARS Manhattan,KS to process output from the alveograph."
